@@ -209,6 +209,10 @@ async def login(
         expires_delta=access_token_expires
     )
 
+    # 🔍 DEBUG: 토큰 생성 확인
+    print(f"🔍 DEBUG [login]: access_token generated = {access_token[:50] if access_token else 'None'}...")
+    print(f"🔍 DEBUG [login]: user_id = {user.id}, email = {user.email}")
+
     # 신뢰할 수 있는 디바이스로 등록 (낮은 위험도인 경우)
     if device_id and risk_score <= 0.3 and not device_trusted:
         try:
@@ -228,7 +232,8 @@ async def login(
         path="/"
     )
 
-    return {
+    # 🔍 DEBUG: 응답 데이터 확인
+    response_data = {
         "access_token": access_token,  # localStorage 저장용 추가
         "user": {
             "email": user.email,
@@ -246,6 +251,13 @@ async def login(
         "device_trusted": device_trusted,
         "risk_level": "high" if risk_score > 0.5 else "medium" if risk_score > 0.3 else "low"
     }
+
+    # 🔍 DEBUG: 최종 응답 확인
+    print(f"🔍 DEBUG [login]: Returning response with keys: {response_data.keys()}")
+    print(f"🔍 DEBUG [login]: access_token in response: {'access_token' in response_data}")
+    print(f"🔍 DEBUG [login]: access_token value: {response_data.get('access_token', 'MISSING')[:50] if response_data.get('access_token') else 'None'}...")
+
+    return response_data
 
 @router.post("/mfa/verify")
 async def verify_mfa(
