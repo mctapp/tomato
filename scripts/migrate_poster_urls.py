@@ -25,13 +25,16 @@ from sqlmodel import Session, select
 from app.db import get_engine
 from app.models.movies import Movie
 from app.models.file_assets import FileAsset
-from app.config import settings
 
 
 def build_s3_url(s3_key: str, is_public: bool) -> str:
     """S3 키와 공개 여부로부터 전체 S3 URL 생성"""
-    bucket_name = settings.PUBLIC_BUCKET_NAME if is_public else settings.PRIVATE_BUCKET_NAME
-    region = settings.AWS_REGION
+    # 환경변수에서 직접 가져오기
+    public_bucket = os.environ.get("PUBLIC_BUCKET_NAME", "tomato-public")
+    private_bucket = os.environ.get("PRIVATE_BUCKET_NAME", "tomato-private")
+    region = os.environ.get("AWS_REGION", "ap-northeast-2")
+
+    bucket_name = public_bucket if is_public else private_bucket
     return f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}"
 
 
