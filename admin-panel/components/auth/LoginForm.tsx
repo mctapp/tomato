@@ -145,6 +145,11 @@ export function LoginForm() {
       }
 
       // MFA가 없는 경우 바로 로그인
+      // 토큰 저장
+      if (result.access_token) {
+        localStorage.setItem('accessToken', result.access_token);
+      }
+
       toast.success('로그인 성공! 대시보드로 이동합니다.');
       setTimeout(() => {
         window.location.href = '/dashboard';
@@ -172,8 +177,13 @@ export function LoginForm() {
   const onMFASubmit = async (data: MFAData) => {
     try {
       setError(null);
-      await verifyMFA(data.code, mfaToken);
-      
+      const result = await verifyMFA(data.code, mfaToken);
+
+      // 토큰 저장
+      if (result.access_token) {
+        localStorage.setItem('accessToken', result.access_token);
+      }
+
       toast.success('인증 성공! 대시보드로 이동합니다.');
       setTimeout(() => {
         window.location.href = '/dashboard';
