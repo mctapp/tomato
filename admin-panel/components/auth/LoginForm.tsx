@@ -136,6 +136,12 @@ export function LoginForm() {
       setSuccess(null);
       const result = await loginUser(data);
 
+      // 🔍 DEBUG: 로그인 응답 확인
+      console.log("🔍 DEBUG [LoginForm]: Login response:", result);
+      console.log("🔍 DEBUG [LoginForm]: result.access_token:", result.access_token);
+      console.log("🔍 DEBUG [LoginForm]: typeof result.access_token:", typeof result.access_token);
+      console.log("🔍 DEBUG [LoginForm]: result keys:", Object.keys(result));
+
       // MFA가 필요한 경우
       if (result.requires_mfa) {
         setMfaRequired(true);
@@ -146,8 +152,13 @@ export function LoginForm() {
 
       // MFA가 없는 경우 바로 로그인
       // 토큰 저장
+      console.log("🔍 DEBUG [LoginForm]: Checking access_token...");
       if (result.access_token) {
+        console.log("🔍 DEBUG [LoginForm]: Saving to localStorage:", result.access_token.substring(0, 50));
         localStorage.setItem('accessToken', result.access_token);
+        console.log("🔍 DEBUG [LoginForm]: Saved! Verifying:", localStorage.getItem('accessToken')?.substring(0, 50));
+      } else {
+        console.error("🔍 DEBUG [LoginForm]: ❌ result.access_token is falsy!");
       }
 
       toast.success('로그인 성공! 대시보드로 이동합니다.');
