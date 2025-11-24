@@ -37,12 +37,12 @@ export default function ApiExplorerPage() {
 
   // 검색어 필터링된 엔드포인트
   const filteredEndpoints = endpoints.filter(endpoint => {
-    const matchesSearch = 
+    const matchesSearch =
       endpoint.path.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      endpoint.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+      endpoint.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
     if (activeTab === 'all') return matchesSearch;
-    return matchesSearch && endpoint.category === activeTab;
+    return matchesSearch && endpoint.tags?.includes(activeTab);
   });
 
   // 엔드포인트 선택

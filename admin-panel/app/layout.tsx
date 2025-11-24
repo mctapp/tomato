@@ -1,9 +1,7 @@
 import '@/styles/globals.css';
-import { Inter } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
 import { Metadata } from 'next';
 import { Providers } from './providers';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: '토마토 - 영화 접근성 관리 시스템',
@@ -17,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={GeistSans.className}>
         <Providers>
           {children}
         </Providers>

@@ -23,9 +23,9 @@ export function EndpointList({
   const [searchQuery, setSearchQuery] = useState("");
 
   // 검색 필터링된 엔드포인트
-  const filteredEndpoints = endpoints.filter(endpoint => 
+  const filteredEndpoints = endpoints.filter(endpoint =>
     endpoint.path.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    endpoint.description.toLowerCase().includes(searchQuery.toLowerCase())
+    endpoint.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // HTTP 메서드별 색상 매핑
