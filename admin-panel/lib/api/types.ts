@@ -31,6 +31,7 @@ export interface ApiEndpointMetadata {
   method: HttpMethod;
   summary: string;
   description?: string;
+  category?: string;
   tags?: string[];
   parameters?: ApiParameter[];
   requestBody?: ApiRequestBody;
