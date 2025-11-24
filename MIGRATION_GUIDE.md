@@ -14,8 +14,14 @@ Movie 테이블에 `poster_url` 필드를 추가하여 S3 public URL을 직접 �
 - `app/schemas/movie.py`: 모든 movie 스키마에 `poster_url` 추가
 
 ### 프론트엔드
-- `admin-panel/components/movies/MovieForm.tsx`: poster URL 저장 로직 추가
-- `admin-panel/types/movie.ts`: `posterUrl` 필드 추가
+- `components/movies/MovieForm.tsx`:
+  - `api.ts` 사용으로 camelCase ↔ snake_case 자동 변환
+  - poster URL 저장 로직 추가
+- `types/movie.ts`: `posterUrl` 필드 추가
+
+### ✅ 중요: 자동 필드명 변환
+프론트엔드는 `posterUrl` (camelCase), 백엔드는 `poster_url` (snake_case)을 사용합니다.
+`lib/api.ts`의 axios 인터셉터가 자동으로 변환하므로 **새로 업로드하면 자동으로 저장**됩니다!
 
 ## 마이그레이션 순서
 
