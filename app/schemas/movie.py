@@ -52,6 +52,7 @@ class MovieBase(BaseSchema):
     distributor_id: Optional[int] = None
     is_public: bool = False
     publishing_status: str = "draft"
+    poster_url: Optional[str] = None
     
     @field_validator('start_at', 'end_at', mode='before')
     @classmethod
@@ -62,6 +63,7 @@ class MovieBase(BaseSchema):
 
 class MovieCreate(MovieBase):
     poster_file_id: Optional[int] = None
+    poster_url: Optional[str] = None
 
 class MovieUpdate(BaseSchema):
     title: Optional[str] = None
@@ -82,7 +84,8 @@ class MovieUpdate(BaseSchema):
     is_public: Optional[bool] = None
     publishing_status: Optional[str] = None
     poster_file_id: Optional[int] = None
-    
+    poster_url: Optional[str] = None
+
     @field_validator('start_at', 'end_at', mode='before')
     @classmethod
     def empty_str_to_none(cls, v):
@@ -111,6 +114,7 @@ class MovieDetailResponse(MovieResponse):
     signature_file_size: Optional[int] = None
     signature_upload_time: Optional[datetime] = None
     poster_file_id: Optional[int] = None
+    poster_url: Optional[str] = None
 
 class MovieSummaryResponse(BaseSchema):
     id: int
