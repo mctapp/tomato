@@ -38,8 +38,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // 🔄 Legacy token migration: 'token' -> 'accessToken'
+    const migrateToken = () => {
+      const oldToken = localStorage.getItem('token');
+      const newToken = localStorage.getItem('accessToken');
+
+      if (oldToken && !newToken) {
+        console.log('Migrating token from old key to new key');
+        localStorage.setItem('accessToken', oldToken);
+        localStorage.removeItem('token');
+      }
+    };
+
     const checkUser = async () => {
       try {
+        // Migrate token first
+        migrateToken();
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
           controller.abort();

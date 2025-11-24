@@ -40,7 +40,16 @@ export function FileUploadBase({
     setError(null);
 
     try {
-      const token = localStorage.getItem('accessToken'); // ✅ 정확히 수정된 키
+      // Try new key first, fallback to old key for backwards compatibility
+      let token = localStorage.getItem('accessToken');
+
+      // 🔄 Fallback to old key if new key doesn't exist
+      if (!token) {
+        token = localStorage.getItem('token');
+        if (token) {
+          console.warn('Using legacy token key. Please re-login to update.');
+        }
+      }
 
       if (!token) {
         throw new Error("JWT 토큰이 없습니다. 다시 로그인하세요.");
