@@ -56,6 +56,7 @@ import { useVoiceArtists, useDeleteVoiceArtist } from '@/hooks/useVoiceArtists';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useDebounce } from '@/hooks/useDebounce';
 import { VoiceArtistSummary } from '@/types/voiceartists';
+import { formatPhoneNumber } from '@/lib/utils/phone';
 
 // 성별 옵션
 const GENDER_OPTIONS = [
@@ -165,7 +166,7 @@ function VoiceArtistTable({
               <TableCell>{artist.voiceartistLocation || '-'}</TableCell>
               <TableCell>
                 <div className="space-y-1">
-                  {artist.voiceartistPhone && <p className="text-sm">{artist.voiceartistPhone}</p>}
+                  {artist.voiceartistPhone && <p className="text-sm">{formatPhoneNumber(artist.voiceartistPhone)}</p>}
                   {artist.voiceartistEmail && <p className="text-xs text-gray-500">{artist.voiceartistEmail}</p>}
                   {!artist.voiceartistPhone && !artist.voiceartistEmail && <p className="text-sm">-</p>}
                 </div>

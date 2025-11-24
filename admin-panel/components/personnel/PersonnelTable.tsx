@@ -15,6 +15,7 @@ import { Edit, Trash2, User, Video, Image } from 'lucide-react';
 import { PersonnelSummary, PersonnelType, isPersonnelSummary } from '@/types/personnel';
 import { GENDER_DISPLAY, SIGN_LANGUAGE_DISPLAY } from '@/lib/constants/personnel';
 import { getSkillLevelBadgeColor, getPersonnelPaths, safeArray, safeString } from '@/lib/utils/personnel';
+import { formatPhoneNumber } from '@/lib/utils/phone';
 
 interface PersonnelTableProps {
   type: PersonnelType;
@@ -221,7 +222,7 @@ export function PersonnelTable({
               
               <TableCell>
                 <div className="space-y-1">
-                  {item.phone && <p className="text-sm">{item.phone}</p>}
+                  {item.phone && <p className="text-sm">{formatPhoneNumber(item.phone)}</p>}
                   {item.email && <p className="text-xs text-gray-500">{item.email}</p>}
                   {!item.phone && !item.email && <p className="text-sm">-</p>}
                 </div>

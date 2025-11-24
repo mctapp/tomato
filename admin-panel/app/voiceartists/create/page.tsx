@@ -41,6 +41,7 @@ import {
 import { useCreateVoiceArtist } from "@/hooks/useVoiceArtists";
 import { VoiceArtistExpertise } from "@/types/voiceartists";
 import AudioPlayer from "@/components/audio/AudioPlayer";
+import { formatPhoneInput, cleanPhoneNumber } from "@/lib/utils/phone";
 
 // 성별 옵션
 const GENDER_OPTIONS = [
@@ -135,11 +136,31 @@ function CreateVoiceArtistPage() {
       ...prev,
       [id]: value
     }));
-    
+
     // 2. React Hook Form 상태 업데이트
     setValue(id as any, value, { shouldValidate: true });
-    
+
     console.log(`Input changed: ${id} = ${value}`);
+  };
+
+  // 전화번호 입력 핸들러 (포맷팅 적용)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    const prevValue = formInputs.voiceartistPhone || '';
+
+    // 포맷팅된 전화번호
+    const formattedPhone = formatPhoneInput(value, prevValue);
+
+    // 1. 로컬 상태 업데이트 (포맷팅된 값)
+    setFormInputs(prev => ({
+      ...prev,
+      voiceartistPhone: formattedPhone
+    }));
+
+    // 2. React Hook Form 상태 업데이트 (숫자만 저장)
+    setValue("voiceartistPhone", cleanPhoneNumber(formattedPhone), { shouldValidate: true });
+
+    console.log(`Phone changed: ${formattedPhone} (cleaned: ${cleanPhoneNumber(formattedPhone)})`);
   };
 
   // 이름 입력 핸들러 특별 처리
@@ -518,10 +539,10 @@ function CreateVoiceArtistPage() {
                       </Label>
                       <Input
                         id="voiceartistPhone"
-                        placeholder="전화번호를 입력하세요"
+                        placeholder="전화번호를 입력하세요 (예: 010-1234-5678)"
                         className="border-gray-300 focus:ring-[#4da34c] focus:border-[#4da34c]"
                         value={formInputs.voiceartistPhone || ""}
-                        onChange={handleInputChange}
+                        onChange={handlePhoneChange}
                       />
                     </div>
 
