@@ -138,7 +138,7 @@ export function LoginForm() {
 
       // 🔍 DEBUG: 로그인 응답 확인
       console.log("🔍 DEBUG [LoginForm]: Login response:", result);
-      console.log("🔍 DEBUG [LoginForm]: result.access_token:", result.access_token);
+      console.log("🔍 DEBUG [LoginForm]: result.access_token:", result.access_token ?? "undefined");
       console.log("🔍 DEBUG [LoginForm]: typeof result.access_token:", typeof result.access_token);
       console.log("🔍 DEBUG [LoginForm]: result keys:", Object.keys(result));
 
@@ -154,7 +154,7 @@ export function LoginForm() {
       // 토큰 저장
       console.log("🔍 DEBUG [LoginForm]: Checking access_token...");
       if (result.access_token) {
-        console.log("🔍 DEBUG [LoginForm]: Saving to localStorage:", result.access_token.substring(0, 50));
+        console.log("🔍 DEBUG [LoginForm]: Saving to localStorage:", result.access_token?.substring(0, 50));
         localStorage.setItem('accessToken', result.access_token);
         console.log("🔍 DEBUG [LoginForm]: Saved! Verifying:", localStorage.getItem('accessToken')?.substring(0, 50));
       } else {
