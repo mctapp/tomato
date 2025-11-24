@@ -96,3 +96,22 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Production 모듈을 위한 fetchApi 함수 추가
+export async function fetchApi<T = any>(url: string, options: any = {}): Promise<T> {
+  try {
+    const response = await api({
+      url,
+      method: options.method || 'GET',
+      data: options.body ? JSON.parse(options.body) : undefined,
+      headers: options.headers || {},
+      ...options
+    });
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      throw new Error(error.response.data?.message || error.message);
+    }
+    throw error;
+  }
+}
