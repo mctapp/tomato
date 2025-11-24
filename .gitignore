@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+*.pyo
+*.pyd
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 환경 변수 및 설정
+.env
+.env.*
+config.py
+secrets.json
+*.key
+*.pem
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 로그 파일
+*.log
+nohup.out
+logs/
+
+# DB 백업
+db_backups/
+*.sql
+*.dump
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+
+# 임시 파일
+DEL
+KEYS
+exit
+touch
+python#
+*.save
+*.bak
+*.tmp
+temp/
+
+# 미디어 파일 (필요시 주석 해제)
+# uploads/
+# media/
+# static/files/

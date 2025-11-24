@@ -1,0 +1,1 @@
+ scheduled_backups.is_active, scheduled_backups.created_at, scheduled_backups.last_run
