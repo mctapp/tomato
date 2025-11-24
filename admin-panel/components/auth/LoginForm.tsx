@@ -138,8 +138,8 @@ export function LoginForm() {
 
       // 🔍 DEBUG: 로그인 응답 확인
       console.log("🔍 DEBUG [LoginForm]: Login response:", result);
-      console.log("🔍 DEBUG [LoginForm]: result.access_token:", result.access_token ?? "undefined");
-      console.log("🔍 DEBUG [LoginForm]: typeof result.access_token:", typeof result.access_token);
+      console.log("🔍 DEBUG [LoginForm]: result.access_token:", (result as any).access_token ?? "undefined");
+      console.log("🔍 DEBUG [LoginForm]: typeof result.access_token:", typeof (result as any).access_token);
       console.log("🔍 DEBUG [LoginForm]: result keys:", Object.keys(result));
 
       // MFA가 필요한 경우
@@ -153,9 +153,10 @@ export function LoginForm() {
       // MFA가 없는 경우 바로 로그인
       // 토큰 저장
       console.log("🔍 DEBUG [LoginForm]: Checking access_token...");
-      if (result.access_token) {
-        console.log("🔍 DEBUG [LoginForm]: Saving to localStorage:", result.access_token?.substring(0, 50));
-        localStorage.setItem('accessToken', result.access_token);
+      const accessToken = (result as any).access_token;
+      if (accessToken) {
+        console.log("🔍 DEBUG [LoginForm]: Saving to localStorage:", accessToken.substring(0, 50));
+        localStorage.setItem('accessToken', accessToken);
         console.log("🔍 DEBUG [LoginForm]: Saved! Verifying:", localStorage.getItem('accessToken')?.substring(0, 50));
       } else {
         console.error("🔍 DEBUG [LoginForm]: ❌ result.access_token is falsy!");
@@ -191,8 +192,9 @@ export function LoginForm() {
       const result = await verifyMFA(data.code, mfaToken);
 
       // 토큰 저장
-      if (result.access_token) {
-        localStorage.setItem('accessToken', result.access_token);
+      const mfaAccessToken = (result as any).access_token;
+      if (mfaAccessToken) {
+        localStorage.setItem('accessToken', mfaAccessToken);
       }
 
       toast.success('인증 성공! 대시보드로 이동합니다.');
