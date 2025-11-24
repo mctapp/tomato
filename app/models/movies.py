@@ -53,7 +53,8 @@ class Movie(SQLModel, table=True):
     
     # 파일 에셋 관계 필드 추가
     poster_file_id: Optional[int] = Field(default=None, foreign_key="file_assets.id")
-    
+    poster_url: Optional[str] = None  # S3 public URL 직접 저장
+
     created_at: Optional[datetime] = Field(
         default=None,
         sa_column=Column(

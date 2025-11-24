@@ -34,6 +34,7 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [posterId, setPosterId] = useState<number | null>(initialData?.posterFileId || null);
+  const [posterUrl, setPosterUrl] = useState<string | null>(initialData?.posterUrl || null);
   const [signatureFileId, setSignatureFileId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
 
@@ -65,7 +66,8 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
       // API 요청 데이터 준비
       const movieData = {
         ...data,
-        posterFileId: posterId
+        posterFileId: posterId,
+        posterUrl: posterUrl
       };
       
       // 신규 생성 또는 수정 API 호출
@@ -118,6 +120,10 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
   const handlePosterUploadComplete = (fileData: any) => {
     if (fileData && fileData.id) {
       setPosterId(fileData.id);
+      // S3 public URL 저장
+      if (fileData.public_url || fileData.publicUrl) {
+        setPosterUrl(fileData.public_url || fileData.publicUrl);
+      }
       toast.success("포스터 업로드 완료", {
         description: "포스터 이미지가 성공적으로 업로드되었습니다."
       });
@@ -384,7 +390,7 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
                     entityId={initialData?.id || -1}
                     usageType="poster"
                     onUploadComplete={handlePosterUploadComplete}
-                    initialImageUrl={initialData?.posterFileId ? `/api/files/${initialData.posterFileId}` : undefined}
+                    initialImageUrl={posterUrl || undefined}
                   />
                 </CardContent>
               </Card>

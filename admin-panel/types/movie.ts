@@ -36,6 +36,7 @@ export interface MovieBase {
   publicVersion?: number | null;
   publishingStatus: string;
   posterFileId?: number | null;
+  posterUrl?: string | null;
   posterOriginalRenditionId?: number | null;
   supportedOsType?: 'ios' | 'android' | null;
   signatureS3Directory?: string | null;
@@ -66,6 +67,7 @@ export interface MovieUpdate {
   publicVersion?: number | null;
   publishingStatus?: string;
   posterFileId?: number | null;
+  posterUrl?: string | null;
   posterOriginalRenditionId?: number | null;
   supportedOsType?: 'ios' | 'android' | null;
   signatureS3Directory?: string | null;
