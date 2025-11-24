@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar as CalendarComponent } from "../ui/calendar";
 import { toast } from "sonner";
+import { api } from "../../lib/api";
 
 interface MovieFormProps {
   initialData?: Movie;
@@ -62,34 +63,28 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
   const handleSubmit = async (data: MovieFormValues) => {
     try {
       setIsSubmitting(true);
-      
+
       // API 요청 데이터 준비
       const movieData = {
         ...data,
         posterFileId: posterId,
         posterUrl: posterUrl
       };
-      
-      // 신규 생성 또는 수정 API 호출
-      const url = initialData 
-        ? `/admin/api/movies/${initialData.id}` 
+
+      // 신규 생성 또는 수정 API 호출 (api.ts 사용하여 camelCase -> snake_case 자동 변환)
+      const url = initialData
+        ? `/admin/api/movies/${initialData.id}`
         : "/admin/api/movies";
-      
-      const method = initialData ? "PUT" : "POST";
-      
-      const response = await fetch(url, {
+
+      const method = initialData ? "put" : "post";
+
+      const response = await api({
+        url,
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(movieData),
+        data: movieData,
       });
-      
-      if (!response.ok) {
-        throw new Error(`영화 ${initialData ? '수정' : '생성'} 중 오류가 발생했습니다.`);
-      }
-      
-      const savedMovie = await response.json();
+
+      const savedMovie = response.data;
       
       toast.success(
         `영화가 성공적으로 ${initialData ? '수정' : '생성'}되었습니다`,
@@ -104,12 +99,13 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
         router.push("/movies");
         router.refresh();
       }
-      
-    } catch (error) {
+
+    } catch (error: any) {
       console.error("Error saving movie:", error);
+      const errorMessage = error.response?.data?.message || error.message || "알 수 없는 오류가 발생했습니다.";
       toast.error(
-        "오류", 
-        { description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다." }
+        "오류",
+        { description: errorMessage }
       );
     } finally {
       setIsSubmitting(false);
