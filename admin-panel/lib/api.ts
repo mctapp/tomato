@@ -96,3 +96,57 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Fetch API 래퍼 함수 (기존 코드와의 호환성을 위해)
+export async function fetchApi(url: string, options: RequestInit = {}): Promise<any> {
+  const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const fullUrl = url.startsWith('http') ? url : `${baseURL}${url}`;
+
+  // 기본 헤더 설정
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // 기존 헤더 병합
+  if (options.headers) {
+    const optionsHeaders = new Headers(options.headers);
+    optionsHeaders.forEach((value, key) => {
+      headers[key] = value;
+    });
+  }
+
+  // 토큰이 있으면 헤더에 추가
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  // body가 있으면 snake_case로 변환 (JSON인 경우)
+  let body = options.body;
+  if (body && typeof body === 'string') {
+    try {
+      const parsed = JSON.parse(body);
+      body = JSON.stringify(keysToSnake(parsed));
+    } catch (e) {
+      // JSON이 아니면 그대로 사용
+    }
+  }
+
+  const response = await fetch(fullUrl, {
+    ...options,
+    headers,
+    body,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // snake_case를 camelCase로 변환
+  return keysToCamel(data);
+}
