@@ -30,6 +30,9 @@ export interface MFALoginResponse {
   mfa_type?: 'NONE' | 'TOTP' | 'SMS' | 'EMAIL';
   message: string;
   user?: UserData;
+  access_token?: string;  // 토큰 필드 추가
+  device_trusted?: boolean;
+  risk_level?: string;
 }
 
 export interface MFASetupRequest {
