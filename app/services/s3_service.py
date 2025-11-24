@@ -28,7 +28,7 @@ class S3Service:
         self.encryption_type = settings.AWS_S3_ENCRYPTION_TYPE
         self.bucket_key_enabled = settings.AWS_S3_BUCKET_KEY_ENABLED
         
-    def generate_presigned_post(self, key: str, content_type: str, is_public: bool = False, 
+    def generate_presigned_post(self, key: str, content_type: str, is_public: bool = False,
                                expires_in: int = 3600, max_content_length: int = 100 * 1024 * 1024) -> Dict:
         """업로드용 presigned URL 생성"""
         try:
@@ -38,21 +38,25 @@ class S3Service:
                 {"Content-Type": content_type},
                 ["content-length-range", 1, max_content_length]
             ]
-            
-            # KMS 암호화 설정 추가
-            if self.encryption_type == "aws:kms" and self.kms_key_id:
-                fields["x-amz-server-side-encryption"] = "aws:kms"
-                fields["x-amz-server-side-encryption-aws-kms-key-id"] = self.kms_key_id
-                conditions.append({"x-amz-server-side-encryption": "aws:kms"})
-                conditions.append({"x-amz-server-side-encryption-aws-kms-key-id": self.kms_key_id})
-                
-                if self.bucket_key_enabled:
-                    fields["x-amz-server-side-encryption-bucket-key-enabled"] = "true"
-                    conditions.append({"x-amz-server-side-encryption-bucket-key-enabled": "true"})
-            
+
+            # 공개 파일은 AES256 사용, 비공개 파일은 KMS 사용
             if is_public:
+                # 공개 파일: AES256 암호화 (공개 URL 접근 가능)
+                fields["x-amz-server-side-encryption"] = "AES256"
+                conditions.append({"x-amz-server-side-encryption": "AES256"})
                 fields["acl"] = "public-read"
                 conditions.append({"acl": "public-read"})
+            else:
+                # 비공개 파일: KMS 암호화
+                if self.encryption_type == "aws:kms" and self.kms_key_id:
+                    fields["x-amz-server-side-encryption"] = "aws:kms"
+                    fields["x-amz-server-side-encryption-aws-kms-key-id"] = self.kms_key_id
+                    conditions.append({"x-amz-server-side-encryption": "aws:kms"})
+                    conditions.append({"x-amz-server-side-encryption-aws-kms-key-id": self.kms_key_id})
+
+                    if self.bucket_key_enabled:
+                        fields["x-amz-server-side-encryption-bucket-key-enabled"] = "true"
+                        conditions.append({"x-amz-server-side-encryption-bucket-key-enabled": "true"})
             
             response = self.s3_client.generate_presigned_post(
                 Bucket=bucket,
@@ -117,18 +121,21 @@ class S3Service:
             
             start_time = time.time()
             content = await file.read()
-            
+
             extra_args = {'ContentType': file.content_type}
-            
-            # KMS 암호화 설정 추가
-            if self.encryption_type == "aws:kms" and self.kms_key_id:
-                extra_args['ServerSideEncryption'] = 'aws:kms'
-                extra_args['SSEKMSKeyId'] = self.kms_key_id
-                if self.bucket_key_enabled:
-                    extra_args['BucketKeyEnabled'] = True
-            
+
+            # 공개 파일은 AES256 사용, 비공개 파일은 KMS 사용
             if is_public:
+                # 공개 파일: AES256 암호화 (공개 URL 접근 가능)
+                extra_args['ServerSideEncryption'] = 'AES256'
                 extra_args['ACL'] = 'public-read'
+            else:
+                # 비공개 파일: KMS 암호화
+                if self.encryption_type == "aws:kms" and self.kms_key_id:
+                    extra_args['ServerSideEncryption'] = 'aws:kms'
+                    extra_args['SSEKMSKeyId'] = self.kms_key_id
+                    if self.bucket_key_enabled:
+                        extra_args['BucketKeyEnabled'] = True
             
             self.s3_client.put_object(
                 Bucket=bucket,
@@ -169,20 +176,25 @@ class S3Service:
             bucket = self.public_bucket if is_public else self.private_bucket
             upload_id = None
             
-            # 멀티파트 업로드 시작 - KMS 설정 추가
+            # 멀티파트 업로드 시작 - 암호화 설정
             create_mpu_args = {
                 'Bucket': bucket,
                 'Key': key,
                 'ContentType': content_type,
                 'ACL': 'public-read' if is_public else 'private'
             }
-            
-            # KMS 암호화 설정 추가
-            if self.encryption_type == "aws:kms" and self.kms_key_id:
-                create_mpu_args['ServerSideEncryption'] = 'aws:kms'
-                create_mpu_args['SSEKMSKeyId'] = self.kms_key_id
-                if self.bucket_key_enabled:
-                    create_mpu_args['BucketKeyEnabled'] = True
+
+            # 공개 파일은 AES256 사용, 비공개 파일은 KMS 사용
+            if is_public:
+                # 공개 파일: AES256 암호화 (공개 URL 접근 가능)
+                create_mpu_args['ServerSideEncryption'] = 'AES256'
+            else:
+                # 비공개 파일: KMS 암호화
+                if self.encryption_type == "aws:kms" and self.kms_key_id:
+                    create_mpu_args['ServerSideEncryption'] = 'aws:kms'
+                    create_mpu_args['SSEKMSKeyId'] = self.kms_key_id
+                    if self.bucket_key_enabled:
+                        create_mpu_args['BucketKeyEnabled'] = True
             
             start_time = time.time()
             mpu = self.s3_client.create_multipart_upload(**create_mpu_args)
