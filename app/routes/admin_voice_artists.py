@@ -254,7 +254,8 @@ async def upload_profile_image(
             Key=s3_file_name,
             Body=file_content,
             ContentType=file.content_type,
-            ACL='public-read'
+            ACL='public-read',
+            ServerSideEncryption='AES256'
         )
         logger.info(f"Profile image uploaded to S3: s3://{S3_BUCKET}/{s3_file_name}")
 
@@ -355,7 +356,8 @@ async def upload_sample_file(
             Key=s3_file_name,
             Body=file_content,
             ContentType=file.content_type or 'audio/mpeg',
-            ACL='public-read'
+            ACL='public-read',
+            ServerSideEncryption='AES256'
         )
         logger.info(f"Sample file uploaded to S3: s3://{S3_BUCKET}/{s3_file_name}")
 
