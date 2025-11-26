@@ -68,35 +68,35 @@ export async function getAccessAssets(params?: Record<string, any>): Promise<Acc
   const queryString = params
     ? '?' + new URLSearchParams(params as any).toString()
     : '';
-  return api.get<AccessAsset[]>(`/api/access-assets${queryString}`);
+  return api.get<AccessAsset[]>(`/admin/api/access-assets${queryString}`);
 }
 
 /**
  * Get a single access asset by ID
  */
 export async function getAccessAsset(id: number): Promise<AccessAssetDetail> {
-  return api.get<AccessAssetDetail>(`/api/access-assets/${id}`);
+  return api.get<AccessAssetDetail>(`/admin/api/access-assets/${id}`);
 }
 
 /**
  * Create a new access asset
  */
 export async function createAccessAsset(data: AccessAssetCreate): Promise<AccessAsset> {
-  return api.post<AccessAsset>('/api/access-assets', data);
+  return api.post<AccessAsset>('/admin/api/access-assets', data);
 }
 
 /**
  * Update an access asset
  */
 export async function updateAccessAsset(id: number, data: AccessAssetUpdate): Promise<AccessAsset> {
-  return api.put<AccessAsset>(`/api/access-assets/${id}`, data);
+  return api.put<AccessAsset>(`/admin/api/access-assets/${id}`, data);
 }
 
 /**
  * Delete an access asset
  */
 export async function deleteAccessAsset(id: number): Promise<void> {
-  return api.delete<void>(`/api/access-assets/${id}`);
+  return api.delete<void>(`/admin/api/access-assets/${id}`);
 }
 
 /**
@@ -112,7 +112,7 @@ export async function uploadAccessAssetFile(
   formData.append('fileType', fileType);
 
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/access-assets/${id}/upload`,
+    `${process.env.NEXT_PUBLIC_API_URL}/admin/api/access-assets/${id}/upload`,
     {
       method: 'POST',
       credentials: 'include',
@@ -132,7 +132,7 @@ export async function uploadAccessAssetFile(
  */
 export async function downloadAccessAssetFile(id: number, fileType: string): Promise<Blob> {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/access-assets/${id}/download/${fileType}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/admin/api/access-assets/${id}/download/${fileType}`,
     {
       credentials: 'include',
     }
@@ -152,7 +152,7 @@ export async function updatePublishingStatus(
   id: number,
   status: string
 ): Promise<AccessAsset> {
-  return api.patch<AccessAsset>(`/api/access-assets/${id}/publishing-status`, {
+  return api.patch<AccessAsset>(`/admin/api/access-assets/${id}/publishing-status`, {
     publishingStatus: status,
   });
 }
@@ -164,7 +164,7 @@ export async function toggleLockStatus(
   id: number,
   isLocked: boolean
 ): Promise<AccessAsset> {
-  return api.patch<AccessAsset>(`/api/access-assets/${id}/lock`, {
+  return api.patch<AccessAsset>(`/admin/api/access-assets/${id}/lock`, {
     isLocked,
   });
 }
@@ -185,14 +185,14 @@ export interface AccessAssetFile {
 }
 
 export async function getAccessAssetFile(assetId: number): Promise<AccessAssetFile | null> {
-  return api.get<AccessAssetFile | null>(`/api/access-assets/${assetId}/file`);
+  return api.get<AccessAssetFile | null>(`/admin/api/access-assets/${assetId}/file`);
 }
 
 /**
  * Delete file for an access asset
  */
 export async function deleteAccessAssetFile(assetId: number): Promise<void> {
-  return api.delete<void>(`/api/access-assets/${assetId}/file`);
+  return api.delete<void>(`/admin/api/access-assets/${assetId}/file`);
 }
 
 /**
@@ -208,6 +208,6 @@ export async function getDownloadUrl(
   expiresIn: number = 3600
 ): Promise<DownloadUrlResponse> {
   return api.get<DownloadUrlResponse>(
-    `/api/access-assets/${assetId}/download-url?expiresIn=${expiresIn}`
+    `/admin/api/access-assets/${assetId}/download-url?expiresIn=${expiresIn}`
   );
 }
