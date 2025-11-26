@@ -36,6 +36,18 @@ export const SPECIALTY_DISPLAY: Record<string, string> = {
   CC: '폐쇄자막',
 };
 
+export const SPECIALTY_FULL_DISPLAY: Record<string, string> = {
+  AD: '화면해설 (AD)',
+  CC: '폐쇄자막 (CC)',
+};
+
+export const GENDER_DISPLAY: Record<string, string> = {
+  male: '남성',
+  female: '여성',
+  other: '기타',
+  prefer_not_to_say: '밝히지 않음',
+};
+
 export const SPECIALTY_COLORS: Record<string, string> = {
   AD: 'bg-orange-100 text-orange-800 border-orange-300',
   CC: 'bg-indigo-100 text-indigo-800 border-indigo-300',
