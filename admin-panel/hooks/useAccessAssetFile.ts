@@ -19,10 +19,10 @@ export function useAccessAssetFile(assetId: number, enabled = true) {
 // 파일 업로드 뮤테이션 훅
 export function useUploadAccessAssetFile(assetId: number) {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ file, supportedOsType }: { file: File; supportedOsType?: string }) => 
-      uploadAccessAssetFile(assetId, file, supportedOsType),
+    mutationFn: ({ file, supportedOsType }: { file: File; supportedOsType?: string }) =>
+      uploadAccessAssetFile(assetId, file, supportedOsType ?? 'default'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accessAssetFile', assetId] });
       queryClient.invalidateQueries({ queryKey: ['accessAsset', assetId] });

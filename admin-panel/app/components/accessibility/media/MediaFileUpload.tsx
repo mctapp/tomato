@@ -120,8 +120,8 @@ export function MediaFileUpload({ assetId, mediaType }: MediaFileUploadProps) {
 
   // 파일 다운로드 핸들러
   const handleDownload = () => {
-    if (downloadUrl) {
-      window.open(downloadUrl, '_blank');
+    if (downloadUrl?.url) {
+      window.open(downloadUrl.url, '_blank');
     }
   };
 
@@ -183,7 +183,7 @@ export function MediaFileUpload({ assetId, mediaType }: MediaFileUploadProps) {
               <div className="flex-1 truncate">
                 <div className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                  <span className="font-medium">{fileInfo.originalFilename}</span>
+                  <span className="font-medium">{fileInfo.fileName}</span>
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
                   {(fileInfo.fileSize / 1024 / 1024).toFixed(2)} MB

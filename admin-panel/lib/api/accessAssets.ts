@@ -38,7 +38,7 @@ export interface AccessAssetCreate {
   language: string;
   assetType: string;
   movieId?: number;
-  productionYear?: number;
+  productionYear?: number | null;
   description?: string;
 }
 
@@ -47,7 +47,7 @@ export interface AccessAssetUpdate {
   mediaType?: string;
   language?: string;
   assetType?: string;
-  productionYear?: number;
+  productionYear?: number | null;
   productionStatus?: string;
   publishingStatus?: string;
   description?: string;
@@ -167,4 +167,47 @@ export async function toggleLockStatus(
   return api.patch<AccessAsset>(`/api/access-assets/${id}/lock`, {
     isLocked,
   });
+}
+
+/**
+ * Get file info for an access asset
+ */
+export interface AccessAssetFile {
+  id: number;
+  accessAssetId: number;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  supportedOsType?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getAccessAssetFile(assetId: number): Promise<AccessAssetFile | null> {
+  return api.get<AccessAssetFile | null>(`/api/access-assets/${assetId}/file`);
+}
+
+/**
+ * Delete file for an access asset
+ */
+export async function deleteAccessAssetFile(assetId: number): Promise<void> {
+  return api.delete<void>(`/api/access-assets/${assetId}/file`);
+}
+
+/**
+ * Get download URL for an access asset file
+ */
+export interface DownloadUrlResponse {
+  url: string;
+  expiresAt: string;
+}
+
+export async function getDownloadUrl(
+  assetId: number,
+  expiresIn: number = 3600
+): Promise<DownloadUrlResponse> {
+  return api.get<DownloadUrlResponse>(
+    `/api/access-assets/${assetId}/download-url?expiresIn=${expiresIn}`
+  );
 }

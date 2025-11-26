@@ -26,6 +26,7 @@ export interface CardDefinition {
   defaultVisible: boolean;
   allowedRoles?: Role[];
   order?: number;
+  icon?: ReactNode;
 }
 
 export interface DashboardCard {
@@ -60,4 +61,30 @@ export interface UserData {
   role: Role;
   mfaEnabled?: boolean;
   mfaType?: 'NONE' | 'TOTP' | 'SMS' | 'EMAIL';
+}
+
+export interface ExpiringMovie {
+  id: number;
+  title: string;
+  endAt: string;
+  daysRemaining?: number;
+  posterImage?: string;
+}
+
+export interface MovieStats {
+  total: number;
+  totalMovies?: number;
+  activeMovies?: number;
+  draftMovies?: number;
+  publishedMovies?: number;
+  visibility_types?: {
+    always?: number;
+    period?: number;
+    hidden?: number;
+  };
+  publishing_statuses?: {
+    draft?: number;
+    published?: number;
+    archived?: number;
+  };
 }

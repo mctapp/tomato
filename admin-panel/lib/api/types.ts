@@ -14,6 +14,8 @@ export interface ApiEndpointMetadata {
   deprecated?: boolean;
   requiredRoles?: string[];
   responseExample?: any;
+  lastUpdated?: string;
+  usageCount?: number;
 }
 
 export interface ApiParameter {
