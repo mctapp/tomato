@@ -276,7 +276,7 @@ export function LoginForm() {
       <CardHeader>
         <CardTitle className="text-2xl text-center">로그인</CardTitle>
         <CardDescription className="text-center">
-          계정에 로그인하여 영화 접근성 관리 시스템을 이용하세요
+          계정에 로그인하여 접근성 영화 관리 시스템을 이용하세요
         </CardDescription>
       </CardHeader>
 
