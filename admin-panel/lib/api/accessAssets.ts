@@ -64,3 +64,68 @@ export async function toggleLockStatus(assetId: number): Promise<AccessAsset> {
   const response = await api.post<AccessAsset>(`/admin/api/access-assets/${assetId}/toggle-lock`);
   return response.data;
 }
+
+/**
+ * 파일 정보 인터페이스
+ */
+export interface AccessAssetFileInfo {
+  id: number;
+  assetId: number;
+  originalFilename: string;
+  storedFilename: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+}
+
+/**
+ * 접근성 자산 파일 정보 조회
+ */
+export async function getAccessAssetFile(assetId: number): Promise<AccessAssetFileInfo> {
+  const response = await api.get<AccessAssetFileInfo>(`/admin/api/access-assets/${assetId}/file`);
+  return response.data;
+}
+
+/**
+ * 접근성 자산 파일 업로드
+ */
+export async function uploadAccessAssetFile(
+  assetId: number,
+  file: File,
+  supportedOsType?: string
+): Promise<AccessAssetFileInfo> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (supportedOsType) {
+    formData.append('supportedOsType', supportedOsType);
+  }
+
+  const response = await api.post<AccessAssetFileInfo>(
+    `/admin/api/access-assets/${assetId}/file`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return response.data;
+}
+
+/**
+ * 접근성 자산 파일 삭제
+ */
+export async function deleteAccessAssetFile(assetId: number): Promise<void> {
+  await api.delete(`/admin/api/access-assets/${assetId}/file`);
+}
+
+/**
+ * 접근성 자산 파일 다운로드 URL 조회
+ */
+export async function getDownloadUrl(assetId: number, expiresIn: number = 3600): Promise<string> {
+  const response = await api.get<{ url: string }>(
+    `/admin/api/access-assets/${assetId}/file/download-url`,
+    { params: { expiresIn } }
+  );
+  return response.data.url;
+}
