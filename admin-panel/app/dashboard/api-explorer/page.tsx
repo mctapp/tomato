@@ -61,7 +61,7 @@ export default function ApiExplorerPage() {
 
   // 카테고리 목록 생성
   const categories = Array.from(
-    new Set(endpoints.map(endpoint => endpoint.category))
+    new Set(endpoints.map(endpoint => endpoint.category).filter((cat): cat is string => cat !== undefined))
   );
 
   return (
