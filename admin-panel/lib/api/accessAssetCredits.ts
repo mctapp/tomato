@@ -40,21 +40,21 @@ export interface AccessAssetCreditUpdate {
  * Get all credits for an access asset
  */
 export async function getAccessAssetCredits(assetId: number): Promise<AccessAssetCredit[]> {
-  return api.get<AccessAssetCredit[]>(`/api/access-assets/${assetId}/credits`);
+  return api.get<AccessAssetCredit[]>(`/admin/api/access-assets/${assetId}/credits`);
 }
 
 /**
  * Get a single credit by ID
  */
 export async function getAccessAssetCredit(assetId: number, creditId: number): Promise<AccessAssetCredit> {
-  return api.get<AccessAssetCredit>(`/api/access-assets/${assetId}/credits/${creditId}`);
+  return api.get<AccessAssetCredit>(`/admin/api/access-assets/${assetId}/credits/${creditId}`);
 }
 
 /**
  * Create a new credit
  */
 export async function createAccessAssetCredit(data: AccessAssetCreditCreate): Promise<AccessAssetCredit> {
-  return api.post<AccessAssetCredit>(`/api/access-assets/${data.accessAssetId}/credits`, data);
+  return api.post<AccessAssetCredit>(`/admin/api/access-assets/${data.accessAssetId}/credits`, data);
 }
 
 /**
@@ -65,14 +65,14 @@ export async function updateAccessAssetCredit(
   creditId: number,
   data: AccessAssetCreditUpdate
 ): Promise<AccessAssetCredit> {
-  return api.put<AccessAssetCredit>(`/api/access-assets/${assetId}/credits/${creditId}`, data);
+  return api.put<AccessAssetCredit>(`/admin/api/access-assets/${assetId}/credits/${creditId}`, data);
 }
 
 /**
  * Delete a credit
  */
 export async function deleteAccessAssetCredit(assetId: number, creditId: number): Promise<void> {
-  return api.delete<void>(`/api/access-assets/${assetId}/credits/${creditId}`);
+  return api.delete<void>(`/admin/api/access-assets/${assetId}/credits/${creditId}`);
 }
 
 /**
@@ -82,5 +82,5 @@ export async function reorderAccessAssetCredits(
   assetId: number,
   creditIds: number[]
 ): Promise<AccessAssetCredit[]> {
-  return api.put<AccessAssetCredit[]>(`/api/access-assets/${assetId}/credits/reorder`, { creditIds });
+  return api.put<AccessAssetCredit[]>(`/admin/api/access-assets/${assetId}/credits/reorder`, { creditIds });
 }
