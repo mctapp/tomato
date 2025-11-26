@@ -195,9 +195,10 @@ export default function Dashboard() {
           <SortableContext items={visibleCardItems.map(card => card.id)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleCardItems.length > 0 ? (
-                visibleCardItems.map(card => (
-                  <card.component key={card.id} />
-                ))
+                visibleCardItems.map(card => {
+                  const CardComponent = card.component;
+                  return CardComponent ? <CardComponent key={card.id} /> : null;
+                })
               ) : (
                 <div className="col-span-full text-center p-8 border-2 border-dashed border-gray-300 rounded-lg">
                   <p className="text-gray-500">표시할 카드가 없습니다.</p>
