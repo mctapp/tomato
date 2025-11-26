@@ -66,6 +66,10 @@ export function isValidPhoneNumber(phone: string): boolean {
 export function getPersonnelPaths(personnelType: string): {
   basePath: string;
   apiPath: string;
+  list: string;
+  create: string;
+  detail: (id: number) => string;
+  edit: (id: number) => string;
 } {
   const paths: Record<string, { basePath: string; apiPath: string }> = {
     'voice-artist': { basePath: '/voiceartists', apiPath: '/api/voice-artists' },
@@ -73,7 +77,16 @@ export function getPersonnelPaths(personnelType: string): {
     'sl-interpreter': { basePath: '/slinterpreters', apiPath: '/api/sl-interpreters' },
     'staff': { basePath: '/staffs', apiPath: '/api/staffs' },
   };
-  return paths[personnelType] || { basePath: '/', apiPath: '/api' };
+  const { basePath, apiPath } = paths[personnelType] || { basePath: '/', apiPath: '/api' };
+
+  return {
+    basePath,
+    apiPath,
+    list: basePath,
+    create: `${basePath}/create`,
+    detail: (id: number) => `${basePath}/${id}`,
+    edit: (id: number) => `${basePath}/${id}/edit`,
+  };
 }
 
 /**
