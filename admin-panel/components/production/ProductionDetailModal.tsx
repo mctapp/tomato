@@ -203,7 +203,7 @@ export default function ProductionDetailModal({
   // 전체 진행률 계산
   const totalProgress = React.useMemo(() => {
     if (!project) return 0;
-    return calculateTotalProgress(stageData, project.currentStage);
+    return calculateTotalProgress(stageData);
   }, [stageData, project]);
 
   // 현재 단계 태스크

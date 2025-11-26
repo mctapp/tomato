@@ -9,7 +9,7 @@ export function useTodos() {
   return useQuery<Todo[], Error>({
     queryKey: ['todos'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/admin/api/todos');
+      const data = await apiClient.get<Todo[]>('/admin/api/todos');
       return data;
     },
     staleTime: 60 * 1000, // 1분
@@ -21,7 +21,7 @@ export function useCreateTodo() {
   const queryClient = useQueryClient();
   return useMutation<Todo, Error, TodoCreate>({
     mutationFn: async (todo: TodoCreate) => {
-      const { data } = await apiClient.post('/admin/api/todos', todo);
+      const data = await apiClient.post<Todo>('/admin/api/todos', todo);
       return data;
     },
     onSuccess: (data) => {
@@ -47,7 +47,7 @@ export function useUpdateTodo() {
   return useMutation<Todo, Error, { id: number; data: TodoUpdate }, UpdateTodoContext>({
     mutationFn: async ({ id, data }) => {
       console.log('업데이트 요청 데이터:', id, data); // 디버깅용 로그
-      const { data: response } = await apiClient.put(`/admin/api/todos/${id}`, data);
+      const response = await apiClient.put<Todo>(`/admin/api/todos/${id}`, data);
       return response;
     },
     

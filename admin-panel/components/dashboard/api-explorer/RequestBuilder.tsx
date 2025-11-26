@@ -97,8 +97,8 @@ export function RequestBuilder({ endpoint, onSubmit, isLoading = false }: Reques
   // JSON 문자열 복사
   const copyJsonTemplate = () => {
     // 엔드포인트 매개변수에 기반한 기본 JSON 템플릿 생성
-    const template = endpoint.parameters
-      .filter(param => param.in === 'body')
+    const template = (endpoint.parameters || [])
+      .filter(param => (param.in as string) === 'body')
       .reduce<Record<string, any>>((obj, param) => {
         // 기본값 타입별 설정
         let defaultValue = null;
@@ -157,7 +157,7 @@ export function RequestBuilder({ endpoint, onSubmit, isLoading = false }: Reques
       <CardContent>
         <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as any)}>
           <TabsList className="mb-4">
-            <TabsTrigger value="params" disabled={!endpoint.parameters.some(p => p.in === 'query')}>
+            <TabsTrigger value="params" disabled={!(endpoint.parameters || []).some(p => p.in === 'query')}>
               쿼리 파라미터
             </TabsTrigger>
             <TabsTrigger value="body" disabled={endpoint.method === 'GET'}>
@@ -169,9 +169,9 @@ export function RequestBuilder({ endpoint, onSubmit, isLoading = false }: Reques
           </TabsList>
           
           <TabsContent value="params">
-            {endpoint.parameters.filter(p => p.in === 'query').length > 0 ? (
+            {(endpoint.parameters || []).filter(p => p.in === 'query').length > 0 ? (
               <div className="space-y-3">
-                {endpoint.parameters
+                {(endpoint.parameters || [])
                   .filter(p => p.in === 'query')
                   .map((param, index) => (
                     <div key={index} className="grid grid-cols-12 gap-3 items-center">

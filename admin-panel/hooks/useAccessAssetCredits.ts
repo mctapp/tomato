@@ -26,10 +26,10 @@ export function useAccessAssetCredits(assetId: number, options?: { enabled?: boo
 // Create credit mutation
 export function useCreateAccessAssetCredit() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ assetId, data }: { assetId: number; data: AccessAssetCreditCreate }) =>
-      createAccessAssetCredit(assetId, data),
+      createAccessAssetCredit({ ...data, accessAssetId: assetId } as any),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['accessAssetCredits', variables.assetId] });
       toast.success('크레디트가 추가되었습니다');
@@ -87,10 +87,10 @@ export function useDeleteAccessAssetCredit() {
 // Reorder credits mutation
 export function useReorderAccessAssetCredits() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ assetId, data }: { assetId: number; data: AccessAssetCreditReorder }) =>
-      reorderAccessAssetCredits(assetId, data),
+      reorderAccessAssetCredits(assetId, data.creditIds),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['accessAssetCredits', variables.assetId] });
       toast.success('크레디트 순서가 변경되었습니다');
