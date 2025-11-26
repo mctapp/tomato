@@ -13,6 +13,7 @@ export interface ApiEndpointMetadata {
   security?: string[];
   deprecated?: boolean;
   requiredRoles?: string[];
+  responseExample?: any;
 }
 
 export interface ApiParameter {
