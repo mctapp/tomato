@@ -13,8 +13,8 @@ export interface AccessAsset {
 /**
  * 접근성 자산 목록 조회
  */
-export async function getAccessAssets(): Promise<AccessAsset[]> {
-  const response = await api.get<AccessAsset[]>('/admin/api/access-assets');
+export async function getAccessAssets(filters: Record<string, any> = {}): Promise<AccessAsset[]> {
+  const response = await api.get<AccessAsset[]>('/admin/api/access-assets', { params: filters });
   return response.data;
 }
 
@@ -60,8 +60,8 @@ export async function updatePublishingStatus(assetId: number, status: string): P
 /**
  * 접근성 자산 잠금 상태 토글
  */
-export async function toggleLockStatus(assetId: number): Promise<AccessAsset> {
-  const response = await api.post<AccessAsset>(`/admin/api/access-assets/${assetId}/toggle-lock`);
+export async function toggleLockStatus(assetId: number, isLocked?: boolean): Promise<AccessAsset> {
+  const response = await api.post<AccessAsset>(`/admin/api/access-assets/${assetId}/toggle-lock`, { isLocked });
   return response.data;
 }
 
