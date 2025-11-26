@@ -38,14 +38,14 @@ export interface MediaAccessControlUpdate {
  * Get all access controls for an asset
  */
 export async function getMediaAccessControls(assetId: number): Promise<MediaAccessControl[]> {
-  return api.get<MediaAccessControl[]>(`/api/access-assets/${assetId}/access-controls`);
+  return api.get<MediaAccessControl[]>(`/admin/api/access-assets/${assetId}/access-controls`);
 }
 
 /**
  * Get a single access control
  */
 export async function getMediaAccessControl(assetId: number, controlId: number): Promise<MediaAccessControl> {
-  return api.get<MediaAccessControl>(`/api/access-assets/${assetId}/access-controls/${controlId}`);
+  return api.get<MediaAccessControl>(`/admin/api/access-assets/${assetId}/access-controls/${controlId}`);
 }
 
 /**
@@ -53,7 +53,7 @@ export async function getMediaAccessControl(assetId: number, controlId: number):
  */
 export async function createMediaAccessControl(data: MediaAccessControlCreate): Promise<MediaAccessControl> {
   return api.post<MediaAccessControl>(
-    `/api/access-assets/${data.accessAssetId}/access-controls`,
+    `/admin/api/access-assets/${data.accessAssetId}/access-controls`,
     data
   );
 }
@@ -67,7 +67,7 @@ export async function updateMediaAccessControl(
   data: MediaAccessControlUpdate
 ): Promise<MediaAccessControl> {
   return api.put<MediaAccessControl>(
-    `/api/access-assets/${assetId}/access-controls/${controlId}`,
+    `/admin/api/access-assets/${assetId}/access-controls/${controlId}`,
     data
   );
 }
@@ -76,7 +76,7 @@ export async function updateMediaAccessControl(
  * Delete an access control
  */
 export async function deleteMediaAccessControl(assetId: number, controlId: number): Promise<void> {
-  return api.delete<void>(`/api/access-assets/${assetId}/access-controls/${controlId}`);
+  return api.delete<void>(`/admin/api/access-assets/${assetId}/access-controls/${controlId}`);
 }
 
 // Access Request related interfaces and functions
@@ -124,7 +124,7 @@ export async function getAccessRequests(
   const queryString = Object.keys(filters).length
     ? '?' + new URLSearchParams(filters as any).toString()
     : '';
-  return api.get<MediaAccessRequest[]>(`/api/access-requests${queryString}`);
+  return api.get<MediaAccessRequest[]>(`/admin/api/access-requests${queryString}`);
 }
 
 /**
@@ -134,7 +134,7 @@ export async function createAccessRequest(
   mediaId: number,
   data: MediaAccessRequestCreate
 ): Promise<MediaAccessRequest> {
-  return api.post<MediaAccessRequest>(`/api/access-requests/${mediaId}`, data);
+  return api.post<MediaAccessRequest>(`/admin/api/access-requests/${mediaId}`, data);
 }
 
 /**
@@ -144,7 +144,7 @@ export async function processAccessRequest(
   requestId: number,
   data: MediaAccessRequestUpdate
 ): Promise<MediaAccessRequest> {
-  return api.patch<MediaAccessRequest>(`/api/access-requests/${requestId}`, data);
+  return api.patch<MediaAccessRequest>(`/admin/api/access-requests/${requestId}`, data);
 }
 
 /**
@@ -160,7 +160,7 @@ export async function checkAccessPermission(
   if (deviceId) params.append('deviceId', deviceId);
   const queryString = params.toString() ? `?${params.toString()}` : '';
   return api.get<AccessPermissionResponse>(
-    `/api/access-requests/${mediaId}/permission${queryString}`
+    `/admin/api/access-requests/${mediaId}/permission${queryString}`
   );
 }
 
@@ -173,7 +173,7 @@ export async function toggleLockStatus(
   adminId?: number
 ): Promise<{ success: boolean; isLocked: boolean }> {
   return api.patch<{ success: boolean; isLocked: boolean }>(
-    `/api/access-assets/${mediaId}/lock`,
+    `/admin/api/access-assets/${mediaId}/lock`,
     { isLocked, adminId }
   );
 }
