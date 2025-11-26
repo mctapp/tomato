@@ -237,7 +237,7 @@ export function LoginForm() {
               />
 
               <div className="space-y-2">
-                <Button type="submit" className="w-full" disabled={mfaForm.formState.isSubmitting}>
+                <Button type="submit" className="w-full bg-[#ff6246] hover:bg-[#e5573d] text-white" disabled={mfaForm.formState.isSubmitting}>
                   {mfaForm.formState.isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -323,7 +323,7 @@ export function LoginForm() {
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
+            <Button type="submit" className="w-full bg-[#ff6246] hover:bg-[#e5573d] text-white" disabled={loginForm.formState.isSubmitting}>
               {loginForm.formState.isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -336,7 +336,7 @@ export function LoginForm() {
 
             <div className="text-sm text-center mt-4">
               계정이 없으신가요?{" "}
-              <Link href="/auth/register" className="text-primary font-semibold">
+              <Link href="/auth/register" className="text-[#ff6246] hover:text-[#e5573d] font-semibold">
                 회원가입
               </Link>
             </div>
