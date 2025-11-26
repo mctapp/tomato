@@ -16,11 +16,6 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://tomato.mct.kr',
   },
   
-  // 서버 컴포넌트와 관련된 동작 설정
-  experimental: {
-    serverActions: true,
-  },
-  
   // 프로덕션 빌드 최적화
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
