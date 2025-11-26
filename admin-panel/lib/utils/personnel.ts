@@ -97,3 +97,43 @@ export function getSkillLevelBadgeColor(level?: number): { bg: string; text: str
 export function safeArray<T>(arr: T[] | null | undefined): T[] {
   return arr || [];
 }
+
+/**
+ * 배열 유효성 검사
+ */
+export function isValidArray<T>(arr: any): arr is T[] {
+  return Array.isArray(arr) && arr.length > 0;
+}
+
+/**
+ * 이미지 파일 유효성 검사
+ */
+export function isValidImageFile(file: File): boolean {
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  return validTypes.includes(file.type) && file.size <= maxSize;
+}
+
+/**
+ * 파일 크기 포맷팅
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+/**
+ * Personnel 관련 경로 생성
+ */
+export function getPersonnelPaths(type: string, id?: number) {
+  const basePath = `/${type}`;
+  return {
+    list: basePath,
+    detail: id ? `${basePath}/${id}` : basePath,
+    create: `${basePath}/create`,
+    edit: id ? `${basePath}/${id}/edit` : `${basePath}/edit`,
+  };
+}

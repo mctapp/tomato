@@ -48,3 +48,19 @@ export async function updateAccessAsset(assetId: number, assetData: Partial<Acce
 export async function deleteAccessAsset(assetId: number): Promise<void> {
   await api.delete(`/admin/api/access-assets/${assetId}`);
 }
+
+/**
+ * 접근성 자산 게시 상태 변경
+ */
+export async function updatePublishingStatus(assetId: number, status: string): Promise<AccessAsset> {
+  const response = await api.patch<AccessAsset>(`/admin/api/access-assets/${assetId}/publishing-status`, { status });
+  return response.data;
+}
+
+/**
+ * 접근성 자산 잠금 상태 토글
+ */
+export async function toggleLockStatus(assetId: number): Promise<AccessAsset> {
+  const response = await api.post<AccessAsset>(`/admin/api/access-assets/${assetId}/toggle-lock`);
+  return response.data;
+}

@@ -50,3 +50,72 @@ export const MEDIA_TYPE_DISPLAY: Record<string, string> = {
   CC: '화면해설 자막',
   SL: '수어영상'
 };
+
+/**
+ * 제작 단계 간단한 이름
+ */
+export const STAGE_SIMPLE_NAMES: Record<string, string> = {
+  planning: '기획',
+  script: '대본',
+  recording: '녹음',
+  editing: '편집',
+  review: '검토',
+  completed: '완료'
+};
+
+/**
+ * 제작 단계별 색상
+ */
+export const STAGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  planning: {
+    bg: 'bg-yellow-50',
+    text: 'text-yellow-700',
+    border: 'border-yellow-200'
+  },
+  script: {
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-200'
+  },
+  recording: {
+    bg: 'bg-purple-50',
+    text: 'text-purple-700',
+    border: 'border-purple-200'
+  },
+  editing: {
+    bg: 'bg-orange-50',
+    text: 'text-orange-700',
+    border: 'border-orange-200'
+  },
+  review: {
+    bg: 'bg-pink-50',
+    text: 'text-pink-700',
+    border: 'border-pink-200'
+  },
+  completed: {
+    bg: 'bg-green-50',
+    text: 'text-green-700',
+    border: 'border-green-200'
+  }
+};
+
+/**
+ * 제작 단계별 가중치
+ */
+export const STAGE_WEIGHTS: Record<string, number> = {
+  planning: 10,
+  script: 20,
+  recording: 30,
+  editing: 25,
+  review: 10,
+  completed: 5
+};
+
+/**
+ * 속도 타입 정보
+ */
+export const SPEED_TYPE_INFO: Record<string, { label: string; color: string }> = {
+  normal: { label: '보통', color: 'blue' },
+  fast: { label: '빠름', color: 'orange' },
+  urgent: { label: '긴급', color: 'red' }
+};

@@ -74,3 +74,20 @@ export const SIGN_LANGUAGE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'SSL', label: '스페인수어 (SSL)' },
   { value: 'RSL', label: '러시아수어 (RSL)' }
 ];
+
+/**
+ * 수어 언어 표시 맵
+ */
+export const SIGN_LANGUAGE_DISPLAY: Record<string, string> = {
+  KSL: '한국수어',
+  ASL: '미국수어',
+  BSL: '영국수어',
+  JSL: '일본수어',
+  CSL: '중국수어',
+  VSL: '베트남수어',
+  FSL: '프랑스수어',
+  GSL: '독일수어',
+  ISL: '국제수어',
+  SSL: '스페인수어',
+  RSL: '러시아수어'
+};
