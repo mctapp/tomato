@@ -246,10 +246,10 @@ function SampleCard({ sample, onDelete }: SampleCardProps) {
                 
                 <div className="flex space-x-1">
                   {sample.hasAd && (
-                    <Badge className={SPECIALTY_COLORS.AD}>AD</Badge>
+                    <Badge className={`${SPECIALTY_COLORS.AD.bg} ${SPECIALTY_COLORS.AD.text}`}>AD</Badge>
                   )}
                   {sample.hasCc && (
-                    <Badge className={SPECIALTY_COLORS.CC}>CC</Badge>
+                    <Badge className={`${SPECIALTY_COLORS.CC.bg} ${SPECIALTY_COLORS.CC.text}`}>CC</Badge>
                   )}
                 </div>
               </div>
@@ -915,7 +915,7 @@ function ScriptwriterDetailPage({ params }: ScriptwriterDetailPageProps) {
                         {specialties.map((spec, index: number) => (
                           <div key={index} className="p-4 bg-gray-50 rounded-md">
                             <div className="flex justify-between items-center mb-2">
-                              <Badge className={SPECIALTY_COLORS[spec.specialtyType]}>
+                              <Badge className={`${SPECIALTY_COLORS[spec.specialtyType]?.bg} ${SPECIALTY_COLORS[spec.specialtyType]?.text}`}>
                                 {SPECIALTY_FULL_DISPLAY[spec.specialtyType] || spec.specialtyType}
                               </Badge>
                             </div>
