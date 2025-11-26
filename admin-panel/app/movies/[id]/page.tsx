@@ -595,9 +595,9 @@ function MovieDetailPage() {
                   </h3>
                   <div className="flex items-start">
                     <div className="h-40 w-28 overflow-hidden rounded-md border">
-                      <img 
-                        src={`/api/files/${movie.posterFileId}`} 
-                        alt="포스터" 
+                      <img
+                        src={`/api/files/by-id/${movie.posterFileId}`}
+                        alt="포스터"
                         className="h-full w-full object-cover"
                       />
                     </div>

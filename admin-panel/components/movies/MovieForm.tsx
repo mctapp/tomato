@@ -384,7 +384,7 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
                     entityId={initialData?.id || -1}
                     usageType="poster"
                     onUploadComplete={handlePosterUploadComplete}
-                    initialImageUrl={initialData?.posterFileId ? `/api/files/${initialData.posterFileId}` : undefined}
+                    initialImageUrl={initialData?.posterFileId ? `/api/files/by-id/${initialData.posterFileId}` : undefined}
                   />
                 </CardContent>
               </Card>
