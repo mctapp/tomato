@@ -119,3 +119,15 @@ export const SPEED_TYPE_INFO: Record<string, { label: string; color: string }> =
   fast: { label: '빠름', color: 'orange' },
   urgent: { label: '긴급', color: 'red' }
 };
+
+/**
+ * 진행률 단계별 임계값
+ */
+export const PROGRESS_STAGE_THRESHOLDS: Record<string, { min: number; max: number }> = {
+  planning: { min: 0, max: 20 },
+  script: { min: 20, max: 40 },
+  recording: { min: 40, max: 70 },
+  editing: { min: 70, max: 90 },
+  review: { min: 90, max: 99 },
+  completed: { min: 100, max: 100 }
+};

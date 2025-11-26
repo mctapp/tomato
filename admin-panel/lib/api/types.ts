@@ -6,6 +6,7 @@ export interface ApiParameter {
   name: string;
   type: string;
   required: boolean;
+  in?: string;
   description?: string;
   default?: any;
   example?: any;
@@ -36,8 +37,11 @@ export interface ApiEndpointMetadata {
   parameters?: ApiParameter[];
   requestBody?: ApiRequestBody;
   responses: ApiResponse[];
+  responseExample?: any;
   requiresAuth?: boolean;
   requiredRoles?: string[];
+  lastUpdated?: string;
+  usageCount?: number;
 }
 
 export interface ApiMetadataResponse {

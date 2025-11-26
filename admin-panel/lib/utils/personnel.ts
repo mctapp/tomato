@@ -99,6 +99,13 @@ export function safeArray<T>(arr: T[] | null | undefined): T[] {
 }
 
 /**
+ * 안전한 문자열 반환 (null/undefined를 기본값으로 변환)
+ */
+export function safeString(value: string | null | undefined, defaultValue: string = ''): string {
+  return value || defaultValue;
+}
+
+/**
  * 배열 유효성 검사
  */
 export function isValidArray<T>(arr: any): arr is T[] {
@@ -128,12 +135,12 @@ export function formatFileSize(bytes: number): string {
 /**
  * Personnel 관련 경로 생성
  */
-export function getPersonnelPaths(type: string, id?: number) {
+export function getPersonnelPaths(type: string) {
   const basePath = `/${type}`;
   return {
     list: basePath,
-    detail: id ? `${basePath}/${id}` : basePath,
+    detail: (id: number) => `${basePath}/${id}`,
     create: `${basePath}/create`,
-    edit: id ? `${basePath}/${id}/edit` : `${basePath}/edit`,
+    edit: (id: number) => `${basePath}/${id}/edit`,
   };
 }

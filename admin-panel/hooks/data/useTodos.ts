@@ -1,7 +1,7 @@
 // hooks/data/useTodos.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Todo, TodoCreate, TodoUpdate } from '@/types/todo';
-import apiClient from '@/lib/apiClient';
+import { apiClient } from '@/lib/utils/api-client';
 import { toast } from 'sonner';
 
 // Todo 목록 가져오기

@@ -23,42 +23,40 @@ export function isValidPriority(priority: number): boolean {
 }
 
 /**
- * 단계별 진행률 계산
+ * 단계별 진행률 계산 (tasks 배열 기반)
  */
-export function calculateStageProgress(stage: string, progress: number): number {
-  const stageRanges: Record<string, { min: number; max: number }> = {
-    planning: { min: 0, max: 20 },
-    script: { min: 20, max: 40 },
-    recording: { min: 40, max: 70 },
-    editing: { min: 70, max: 90 },
-    review: { min: 90, max: 99 },
-    completed: { min: 100, max: 100 }
-  };
+export function calculateStageProgress(tasks: any[]): number {
+  if (!tasks || tasks.length === 0) return 0;
 
-  const range = stageRanges[stage];
-  if (!range) return progress;
+  // calculateTaskProgress가 외부에서 import되어 사용되므로
+  // 여기서는 tasks의 진행률을 단순 평균으로 계산
+  // 실제 calculateTaskProgress는 TaskCard에서 import됨
+  const totalProgress = tasks.reduce((sum, task) => {
+    // task에 progress 필드가 있다고 가정
+    const taskProgress = task.progress || 0;
+    return sum + taskProgress;
+  }, 0);
 
-  return Math.min(Math.max(progress, range.min), range.max);
+  return Math.round(totalProgress / tasks.length);
 }
 
 /**
  * 전체 진행률 계산
  */
-export function calculateTotalProgress(stages: Array<{ stage: string; progress: number }>): number {
+export function calculateTotalProgress(stages: Array<{ stageProgress: number }>, currentStage?: number): number {
   if (!stages || stages.length === 0) return 0;
 
-  const total = stages.reduce((sum, s) => sum + s.progress, 0);
+  const total = stages.reduce((sum, s) => sum + (s.stageProgress || 0), 0);
   return Math.round(total / stages.length);
 }
 
 /**
- * 진행률에 따른 목표 단계 결정
+ * 진행률에 따른 목표 단계 결정 (스테이지 번호 반환)
+ * StageNumber는 1-4만 가능: 1=planning, 2=script, 3=recording, 4=editing
  */
-export function getTargetStageByProgress(progress: number): string {
-  if (progress >= 100) return 'completed';
-  if (progress >= 90) return 'review';
-  if (progress >= 70) return 'editing';
-  if (progress >= 40) return 'recording';
-  if (progress >= 20) return 'script';
-  return 'planning';
+export function getTargetStageByProgress(progress: number): 1 | 2 | 3 | 4 {
+  if (progress >= 70) return 4;  // editing
+  if (progress >= 40) return 3;  // recording
+  if (progress >= 20) return 2;  // script
+  return 1; // planning
 }
