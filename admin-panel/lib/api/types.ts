@@ -12,6 +12,7 @@ export interface ApiEndpointMetadata {
   tags?: string[];
   security?: string[];
   deprecated?: boolean;
+  requiredRoles?: string[];
 }
 
 export interface ApiParameter {

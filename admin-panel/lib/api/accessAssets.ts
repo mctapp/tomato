@@ -144,3 +144,27 @@ export async function downloadAccessAssetFile(id: number, fileType: string): Pro
 
   return response.blob();
 }
+
+/**
+ * Update publishing status of an access asset
+ */
+export async function updatePublishingStatus(
+  id: number,
+  status: string
+): Promise<AccessAsset> {
+  return api.patch<AccessAsset>(`/api/access-assets/${id}/publishing-status`, {
+    publishingStatus: status,
+  });
+}
+
+/**
+ * Toggle lock status of an access asset
+ */
+export async function toggleLockStatus(
+  id: number,
+  isLocked: boolean
+): Promise<AccessAsset> {
+  return api.patch<AccessAsset>(`/api/access-assets/${id}/lock`, {
+    isLocked,
+  });
+}
