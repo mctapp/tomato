@@ -1,32 +1,49 @@
-
 # app/middleware/ip_filter.py
 from fastapi import Request, Response, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Set, List, Optional
 import ipaddress
+import os
 from app.core.redis import redis_client
 from app.monitoring.logging.structured import logger
 from datetime import datetime, timedelta
 
+# 환경변수로 IP 필터 활성화 여부 제어
+# 프로덕션에서는 기본 활성화, 개발 환경에서는 비활성화 가능
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+ENABLE_IP_FILTER = os.getenv("ENABLE_IP_FILTER", "true").lower() == "true"
+
+# 프로덕션에서는 항상 활성화 (환경변수 무시)
+if ENVIRONMENT == "production":
+    ENABLE_IP_FILTER = True
+
+
 class IPFilterMiddleware(BaseHTTPMiddleware):
     """IP 기반 접근 제어"""
-    
+
     def __init__(self, app):
         super().__init__(app)
-        
+
         # 정적 규칙 (설정 파일에서 로드)
         self.whitelist: Set[ipaddress.IPv4Network] = set()
         self.blacklist: Set[ipaddress.IPv4Network] = set()
-        self.admin_only_paths = ["/admin", "/api/admin"]
+        self.admin_only_paths = ["/admin/api"]  # /admin은 프론트엔드, /admin/api만 보호
         self.blocked_countries = []  # 차단할 국가 코드 리스트
-        
+        self.enabled = ENABLE_IP_FILTER
+
+        if self.enabled:
+            print("🔒 IP Filter: ENABLED")
+        else:
+            print("⚠️  IP Filter: DISABLED (development mode)")
+
     async def startup(self):
         """IP 규칙 로드"""
         await self._load_ip_rules()
-    
+
     async def dispatch(self, request: Request, call_next):
-        # IP 필터 임시 비활성화
-        return await call_next(request)
+        # IP 필터가 비활성화된 경우 (개발 환경에서만 가능)
+        if not self.enabled:
+            return await call_next(request)
 
         # Redis 연결 확인
         try:
