@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"  # .env의 정의되지 않은 환경변수 허용
 
 
 @lru_cache()
