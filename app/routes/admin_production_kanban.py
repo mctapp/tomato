@@ -1398,3 +1398,279 @@ async def complete_production_project(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="프로젝트 완료 처리 중 오류가 발생했습니다"
         )
+
+
+# ── 디버그 및 수동 프로젝트 생성 엔드포인트 ──────────────────────────────────────────
+
+@router.get("/debug/asset/{asset_id}")
+async def debug_asset_project_status(
+    asset_id: int = Path(..., description="접근성 미디어 ID"),
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_editor_user)
+):
+    """
+    접근성 미디어의 프로젝트 생성 조건을 확인합니다.
+    칸반보드에 나타나지 않는 문제를 디버깅할 때 사용합니다.
+    """
+    try:
+        # 1. AccessAsset 조회
+        asset = db.get(AccessAsset, asset_id)
+        if not asset:
+            return {
+                "error": True,
+                "message": f"AccessAsset ID {asset_id}를 찾을 수 없습니다",
+                "asset_exists": False
+            }
+
+        # 2. 크레디트 수 확인
+        credit_count = db.exec(
+            select(func.count(AccessAssetCredit.id))
+            .where(AccessAssetCredit.access_asset_id == asset_id)
+        ).one()
+
+        # 3. 기존 ProductionProject 확인
+        existing_project = db.exec(
+            select(ProductionProject)
+            .where(ProductionProject.access_asset_id == asset_id)
+        ).first()
+
+        # 4. 조건 분석
+        conditions = {
+            "production_status_is_in_progress": asset.production_status == "in_progress",
+            "credits_count_sufficient": credit_count >= 2,
+            "project_already_exists": existing_project is not None
+        }
+
+        can_create_project = (
+            conditions["production_status_is_in_progress"] and
+            conditions["credits_count_sufficient"] and
+            not conditions["project_already_exists"]
+        )
+
+        # 5. 결과 반환
+        result = {
+            "asset_id": asset_id,
+            "asset_name": asset.name,
+            "production_status": asset.production_status,
+            "credit_count": credit_count,
+            "conditions": conditions,
+            "can_create_project": can_create_project,
+            "existing_project": None,
+            "why_not_in_kanban": []
+        }
+
+        # 칸반보드에 나타나지 않는 이유 분석
+        if not conditions["production_status_is_in_progress"]:
+            result["why_not_in_kanban"].append(
+                f"production_status가 '{asset.production_status}'입니다. 'in_progress'여야 합니다."
+            )
+
+        if not conditions["credits_count_sufficient"]:
+            result["why_not_in_kanban"].append(
+                f"크레디트가 {credit_count}개입니다. 최소 2개 이상 필요합니다."
+            )
+
+        if existing_project:
+            result["existing_project"] = {
+                "id": existing_project.id,
+                "project_status": existing_project.project_status,
+                "current_stage": existing_project.current_stage,
+                "progress_percentage": existing_project.progress_percentage
+            }
+
+            if existing_project.project_status != ProjectStatus.ACTIVE.value:
+                result["why_not_in_kanban"].append(
+                    f"ProductionProject가 존재하지만 project_status가 '{existing_project.project_status}'입니다. "
+                    f"칸반보드는 기본적으로 'active' 상태만 표시합니다."
+                )
+        else:
+            result["why_not_in_kanban"].append(
+                "ProductionProject가 생성되지 않았습니다. 위 조건들을 확인하세요."
+            )
+
+        if not result["why_not_in_kanban"]:
+            result["why_not_in_kanban"].append("모든 조건이 충족되었습니다. 칸반보드에 표시되어야 합니다.")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Error debugging asset {asset_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"디버그 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@router.post("/create-project-for-asset/{asset_id}")
+async def create_project_for_asset(
+    asset_id: int = Path(..., description="접근성 미디어 ID"),
+    force: bool = Query(False, description="조건을 무시하고 강제 생성"),
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_editor_user)
+):
+    """
+    접근성 미디어에 대한 ProductionProject를 수동으로 생성합니다.
+    force=true로 설정하면 조건(production_status, credits)을 무시하고 강제 생성합니다.
+    """
+    try:
+        # 1. AccessAsset 조회
+        asset = db.get(AccessAsset, asset_id)
+        if not asset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"AccessAsset ID {asset_id}를 찾을 수 없습니다"
+            )
+
+        # 2. 기존 프로젝트 확인
+        existing_project = db.exec(
+            select(ProductionProject)
+            .where(ProductionProject.access_asset_id == asset_id)
+        ).first()
+
+        if existing_project:
+            # 기존 프로젝트가 있으면 상태를 active로 변경할지 확인
+            if existing_project.project_status != ProjectStatus.ACTIVE.value:
+                if force:
+                    existing_project.project_status = ProjectStatus.ACTIVE.value
+                    existing_project.updated_at = datetime.now()
+                    db.commit()
+                    db.refresh(existing_project)
+                    return {
+                        "message": "기존 프로젝트의 상태를 'active'로 변경했습니다",
+                        "project_id": existing_project.id,
+                        "project_status": existing_project.project_status,
+                        "action": "reactivated"
+                    }
+                else:
+                    return {
+                        "message": f"프로젝트가 이미 존재하지만 상태가 '{existing_project.project_status}'입니다. force=true로 재활성화할 수 있습니다.",
+                        "project_id": existing_project.id,
+                        "project_status": existing_project.project_status,
+                        "action": "none"
+                    }
+            else:
+                return {
+                    "message": "프로젝트가 이미 존재하고 active 상태입니다",
+                    "project_id": existing_project.id,
+                    "project_status": existing_project.project_status,
+                    "action": "none"
+                }
+
+        # 3. 조건 확인 (force가 아닌 경우)
+        if not force:
+            credit_count = db.exec(
+                select(func.count(AccessAssetCredit.id))
+                .where(AccessAssetCredit.access_asset_id == asset_id)
+            ).one()
+
+            if asset.production_status != "in_progress":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"production_status가 '{asset.production_status}'입니다. 'in_progress'여야 합니다. force=true로 강제 생성할 수 있습니다."
+                )
+
+            if credit_count < 2:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"크레디트가 {credit_count}개입니다. 최소 2개 이상 필요합니다. force=true로 강제 생성할 수 있습니다."
+                )
+
+        # 4. 프로젝트 생성
+        credit_count = db.exec(
+            select(func.count(AccessAssetCredit.id))
+            .where(AccessAssetCredit.access_asset_id == asset_id)
+        ).one()
+
+        project = ProductionProject(
+            access_asset_id=asset_id,
+            auto_created=False,  # 수동 생성
+            credits_count=credit_count,
+            creation_trigger="manual",
+            current_stage=1,
+            project_status=ProjectStatus.ACTIVE.value,
+            progress_percentage=0.0,
+            start_date=date.today(),
+            estimated_completion_date=date.today() + timedelta(days=14),
+            work_speed_type=WorkSpeedType.B.value,
+            priority_order=0
+        )
+
+        db.add(project)
+        db.commit()
+        db.refresh(project)
+
+        logger.info(f"Manually created production project {project.id} for asset {asset_id} by user {current_user.id}")
+
+        return {
+            "message": "프로젝트가 성공적으로 생성되었습니다",
+            "project_id": project.id,
+            "project_status": project.project_status,
+            "action": "created"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating project for asset {asset_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"프로젝트 생성 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@router.patch("/projects/{project_id}/reactivate")
+async def reactivate_project(
+    project_id: int = Path(..., description="프로젝트 ID"),
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_editor_user)
+):
+    """
+    완료/일시정지/취소된 프로젝트를 다시 활성화합니다.
+    칸반보드에 다시 나타나게 합니다.
+    """
+    try:
+        project = db.get(ProductionProject, project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="프로젝트를 찾을 수 없습니다"
+            )
+
+        old_status = project.project_status
+
+        if old_status == ProjectStatus.ACTIVE.value:
+            return {
+                "message": "프로젝트가 이미 active 상태입니다",
+                "project_id": project.id,
+                "project_status": project.project_status
+            }
+
+        project.project_status = ProjectStatus.ACTIVE.value
+        project.updated_at = datetime.now()
+
+        # 완료 상태에서 재활성화하는 경우 완료일 초기화
+        if old_status == ProjectStatus.COMPLETED.value:
+            project.actual_completion_date = None
+
+        db.commit()
+        db.refresh(project)
+
+        logger.info(f"Project {project_id} reactivated from '{old_status}' to 'active' by user {current_user.id}")
+
+        return {
+            "message": f"프로젝트가 '{old_status}'에서 'active'로 재활성화되었습니다",
+            "project_id": project.id,
+            "old_status": old_status,
+            "new_status": project.project_status
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reactivating project {project_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="프로젝트 재활성화 중 오류가 발생했습니다"
+        )
