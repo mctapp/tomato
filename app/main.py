@@ -129,13 +129,22 @@ def setup_middleware(app: FastAPI):
         strict=settings.ENVIRONMENT == "production"
     )
     
-    # CORS 설정
+    # CORS 설정 - 보안 강화
+    # 환경변수 ALLOWED_ORIGINS 또는 settings.ALLOWED_ORIGINS 사용
+    allowed_origins = settings.ALLOWED_ORIGINS
+    if not allowed_origins:
+        # 설정이 없으면 프로덕션 기본값 사용
+        allowed_origins = ["https://tomato.mct.kr"]
+        print(f"⚠️  ALLOWED_ORIGINS not configured, using default: {allowed_origins}")
+
+    print(f"🔒 CORS allowed origins: {allowed_origins}")
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=security_config.ALLOWED_ORIGINS if hasattr(security_config, 'ALLOWED_ORIGINS') else ["*"],
+        allow_origins=allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Requested-With", "X-Request-ID"],
     )
 
 # 미들웨어 설정
