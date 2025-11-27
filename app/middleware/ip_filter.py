@@ -25,6 +25,9 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
         await self._load_ip_rules()
     
     async def dispatch(self, request: Request, call_next):
+        # IP 필터 임시 비활성화
+        return await call_next(request)
+
         # Redis 연결 확인
         try:
             await redis_client.ensure_connected()
