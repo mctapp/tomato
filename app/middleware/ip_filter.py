@@ -92,6 +92,7 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
         
         # 사용자 IP 추가
         self.whitelist.add(ipaddress.ip_network("182.31.49.187/32"))
+        self.whitelist.add(ipaddress.ip_network("223.39.84.134/32"))
     
     async def _is_blacklisted(self, ip: str) -> bool:
         """블랙리스트 확인"""
