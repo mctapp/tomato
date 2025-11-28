@@ -68,9 +68,9 @@ class APIGatewayMiddleware(BaseHTTPMiddleware):
                     }
                 )
         
-        # 4. 입력 검증 - GET, HEAD, OPTIONS 요청은 body 검증 스킵
-        if request.method in ["GET", "HEAD", "OPTIONS"]:
-            # GET 요청은 query parameter만 검증
+        # 4. 입력 검증 - GET, HEAD, OPTIONS, DELETE 요청은 body 검증 스킵
+        if request.method in ["GET", "HEAD", "OPTIONS", "DELETE"]:
+            # body가 없는 요청은 query parameter만 검증
             validation_result = {"valid": True}
         else:
             validation_result = await input_validator.validate_request(request)
