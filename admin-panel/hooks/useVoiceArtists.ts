@@ -214,11 +214,17 @@ export const useUploadVoiceArtistProfileImage = (id: number) => {
       const formData = new FormData();
       formData.append('file', file);
 
-      // FormData를 보낼 때는 Content-Type 헤더를 설정하지 않아야 함
+      // FormData를 보낼 때는 Content-Type을 undefined로 설정해야
       // axios가 자동으로 multipart/form-data와 boundary를 설정함
+      // 기본 헤더의 'application/json'을 덮어써야 함
       const response = await api.post(
         `/admin/api/voiceartists/${id}/profile-image`,
-        formData
+        formData,
+        {
+          headers: {
+            'Content-Type': undefined
+          }
+        }
       );
 
       return response.data;

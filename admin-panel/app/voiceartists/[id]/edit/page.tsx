@@ -1,10 +1,9 @@
-
 // app/voiceartists/[id]/edit/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -26,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   AlertCircle,
   ArrowLeft,
@@ -35,7 +33,9 @@ import {
   Star,
   Upload,
   Camera,
-  X
+  X,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -58,6 +58,30 @@ const LEVEL_OPTIONS = Array.from({ length: 9 }, (_, i) => ({
   value: i + 1,
   label: `Lv.${i + 1}`
 }));
+
+// 전문 영역 도메인 옵션
+const DOMAIN_OPTIONS = [
+  { value: "movie", label: "영화" },
+  { value: "video", label: "영상물" },
+  { value: "theater", label: "연극" },
+  { value: "performance", label: "공연" },
+  { value: "other", label: "기타" },
+];
+
+interface FormData {
+  voiceartistName: string;
+  voiceartistGender: string;
+  voiceartistLocation: string;
+  voiceartistLevel: number;
+  voiceartistPhone: string;
+  voiceartistEmail: string;
+  voiceartistMemo: string;
+  expertise: {
+    domain: string;
+    domainOther?: string;
+    grade: number;
+  }[];
+}
 
 function EditVoiceArtistPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -86,21 +110,18 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       const file = event.target.files?.[0];
       if (!file) return;
 
-      // 유효성 검사: 이미지 파일 타입
       const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
       if (!validImageTypes.includes(file.type)) {
         setErrorMessage("이미지 파일만 업로드 가능합니다. (JPEG, PNG, GIF)");
         return;
       }
 
-      // 유효성 검사: 파일 크기 (5MB 제한)
       const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         setErrorMessage("파일 크기가 너무 큽니다. 최대 5MB까지 업로드 가능합니다.");
         return;
       }
 
-      // 미리보기 URL 생성
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
       setUploadedImage(file);
@@ -110,7 +131,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
     []
   );
 
-  // 이미지 제거 핸들러
   const handleRemoveImage = useCallback(() => {
     if (previewUrl && uploadedImage) {
       URL.revokeObjectURL(previewUrl);
@@ -120,7 +140,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
     setImageChanged(true);
   }, [previewUrl, uploadedImage]);
 
-  // 이미지 복원 핸들러 (원래 이미지로 복원)
   const handleRestoreImage = useCallback(() => {
     if (previewUrl && uploadedImage) {
       URL.revokeObjectURL(previewUrl);
@@ -129,7 +148,7 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
     setUploadedImage(null);
     setImageChanged(false);
   }, [previewUrl, uploadedImage]);
-  
+
   // 폼 설정
   const {
     register,
@@ -139,32 +158,46 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
     formState: { errors },
     setValue,
     watch
-  } = useForm({
+  } = useForm<FormData>({
     defaultValues: {
       voiceartistName: "",
-      voiceartistGender: "prefer_not_to_say",
+      voiceartistGender: "male",
       voiceartistLocation: "",
       voiceartistLevel: 1,
       voiceartistPhone: "",
       voiceartistEmail: "",
-      voiceartistMemo: ""
+      voiceartistMemo: "",
+      expertise: [{ domain: "movie", grade: 5 }]
     }
   });
-  
-  // 디버깅을 위한 현재 폼 값 감시
-  const currentValues = watch();
-  
+
+  // 전문 영역 필드 배열
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "expertise"
+  });
+
+  const watchedExpertise = watch("expertise");
+  const watchedGender = watch("voiceartistGender");
+
   // 성우 데이터로 폼 초기화
   useEffect(() => {
     if (artist && !isFormReady) {
       console.log("Artist data received:", artist);
 
-      // 성별 기본값: 남/여 중 하나가 아니면 male로 설정
       const gender = (artist.voiceartistGender === "male" || artist.voiceartistGender === "female")
         ? artist.voiceartistGender
         : "male";
 
-      // 데이터가 null이거나 undefined인 경우 기본값으로 처리
+      // expertise 데이터 변환
+      const expertiseData = artist.expertise && artist.expertise.length > 0
+        ? artist.expertise.map((exp: VoiceArtistExpertise) => ({
+            domain: exp.domain || "movie",
+            domainOther: exp.domainOther || "",
+            grade: exp.grade || 5
+          }))
+        : [{ domain: "movie", grade: 5 }];
+
       const formData = {
         voiceartistName: artist.voiceartistName || "",
         voiceartistGender: gender,
@@ -172,7 +205,8 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
         voiceartistLevel: artist.voiceartistLevel || 1,
         voiceartistPhone: artist.voiceartistPhone || "",
         voiceartistEmail: artist.voiceartistEmail || "",
-        voiceartistMemo: artist.voiceartistMemo || ""
+        voiceartistMemo: artist.voiceartistMemo || "",
+        expertise: expertiseData
       };
 
       reset(formData);
@@ -180,14 +214,22 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       console.log("Form initialized with data:", formData);
     }
   }, [artist, reset, isFormReady]);
-  
+
+  // 전문 영역 추가
+  const handleAddExpertise = () => {
+    if (fields.length >= 5) {
+      toast.error("전문 영역은 최대 5개까지 추가할 수 있습니다.");
+      return;
+    }
+    append({ domain: "movie", grade: 5 });
+  };
+
   // 폼 제출 핸들러
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      // 준비된 데이터
       const updateData = {
         voiceartistName: data.voiceartistName,
         voiceartistGender: data.voiceartistGender,
@@ -195,15 +237,13 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
         voiceartistLevel: data.voiceartistLevel ? parseInt(data.voiceartistLevel.toString()) : 1,
         voiceartistPhone: data.voiceartistPhone,
         voiceartistEmail: data.voiceartistEmail,
-        voiceartistMemo: data.voiceartistMemo
+        voiceartistMemo: data.voiceartistMemo,
+        expertise: data.expertise
       };
 
       console.log("Update data:", updateData);
-
-      // 성우 정보 업데이트
       await updateArtistMutation.mutateAsync(updateData);
 
-      // 이미지가 변경된 경우에만 업로드
       console.log("Image state check:", { imageChanged, hasUploadedImage: !!uploadedImage });
 
       if (imageChanged && uploadedImage) {
@@ -217,12 +257,9 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
         }
       }
 
-      // 캐시 무효화 후 새 데이터 가져오기
       console.log("Invalidating cache...");
       await queryClient.invalidateQueries({ queryKey: ['voiceArtist', artistId] });
       await queryClient.invalidateQueries({ queryKey: ['voiceArtists'] });
-
-      // 새 데이터 강제로 다시 가져오기
       await refetch();
       console.log("Cache invalidated and refetched");
 
@@ -240,8 +277,7 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       setIsSubmitting(false);
     }
   };
-  
-  // 로딩 중 상태
+
   if (isLoading) {
     return (
       <div className="max-w-[1200px] mx-auto py-10">
@@ -251,10 +287,8 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       </div>
     );
   }
-  
-  // 오류 상태
+
   if (isError || !artist) {
-    console.error("Error fetching artist:", error);
     return (
       <div className="max-w-[1200px] mx-auto py-10">
         <Alert variant="destructive" className="mb-6">
@@ -264,16 +298,13 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
             {error instanceof Error ? ` (${error.message})` : ''}
           </AlertDescription>
         </Alert>
-        <Button 
-          onClick={() => router.push('/voiceartists')}
-          variant="outline"
-        >
+        <Button onClick={() => router.push('/voiceartists')} variant="outline">
           목록으로 돌아가기
         </Button>
       </div>
     );
   }
-  
+
   return (
     <div className="max-w-[1200px] mx-auto py-10">
       <Card className="border border-gray-300 shadow-lg rounded-xl">
@@ -286,7 +317,7 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
             {artist.voiceartistName}님의 정보를 수정합니다.
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="p-6">
           {errorMessage && (
             <Alert variant="destructive" className="mb-6">
@@ -294,137 +325,64 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           )}
-          
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* 프로필 이미지 섹션 */}
             <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 p-6 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100">
-              {/* 프로필 이미지 */}
               <div className="relative group">
                 <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100">
-                  {/* 새로 업로드한 이미지가 있으면 보여주고, 없으면 기존 이미지 또는 기본 아바타 표시 */}
                   {previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt="새 프로필 이미지 미리보기"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={previewUrl} alt="새 프로필 이미지 미리보기" className="w-full h-full object-cover" />
                   ) : imageChanged && !uploadedImage ? (
-                    // 이미지 제거됨 상태
                     <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-                      <span className="text-3xl font-medium">
-                        {artist.voiceartistName?.slice(0, 2) || "?"}
-                      </span>
+                      <span className="text-3xl font-medium">{artist.voiceartistName?.slice(0, 2) || "?"}</span>
                     </div>
                   ) : artist.profileImage ? (
-                    <img
-                      src={artist.profileImage}
-                      alt={artist.voiceartistName}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={artist.profileImage} alt={artist.voiceartistName} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#4da34c] to-[#3d8c3c] text-white">
-                      <span className="text-3xl font-medium">
-                        {artist.voiceartistName?.slice(0, 2) || "?"}
-                      </span>
+                      <span className="text-3xl font-medium">{artist.voiceartistName?.slice(0, 2) || "?"}</span>
                     </div>
                   )}
                 </div>
-
-                {/* 호버 시 카메라 오버레이 */}
-                <label
-                  htmlFor="profileImageInput"
-                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                >
+                <label htmlFor="profileImageInput" className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                   <Camera className="w-8 h-8 text-white" />
                 </label>
-                <input
-                  id="profileImageInput"
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-
-                {/* 이미지 상태 배지 */}
+                <input id="profileImageInput" type="file" accept="image/jpeg,image/png,image/gif" className="hidden" onChange={handleImageUpload} />
                 {imageChanged && (
-                  <div className="absolute -bottom-1 -right-1 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full shadow">
-                    변경됨
-                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full shadow">변경됨</div>
                 )}
               </div>
 
-              {/* 이미지 컨트롤 영역 */}
               <div className="flex flex-col justify-center gap-3 text-center sm:text-left">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">프로필 이미지</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    JPG, PNG, GIF 형식 (최대 5MB)
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">JPG, PNG, GIF 형식 (최대 5MB)</p>
                 </div>
-
                 <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                  <label
-                    htmlFor="profileImageInput2"
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-[#4da34c] bg-white border border-[#4da34c] rounded-lg hover:bg-[#f5fbf5] cursor-pointer transition-colors"
-                  >
+                  <label htmlFor="profileImageInput2" className="inline-flex items-center px-4 py-2 text-sm font-medium text-[#4da34c] bg-white border border-[#4da34c] rounded-lg hover:bg-[#f5fbf5] cursor-pointer transition-colors">
                     <Upload className="w-4 h-4 mr-2" />
                     {artist.profileImage || previewUrl ? "이미지 변경" : "이미지 업로드"}
                   </label>
-                  <input
-                    id="profileImageInput2"
-                    type="file"
-                    accept="image/jpeg,image/png,image/gif"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-
-                  {/* 이미지 제거 버튼 (현재 이미지가 있거나 새 이미지가 있는 경우에만 표시) */}
+                  <input id="profileImageInput2" type="file" accept="image/jpeg,image/png,image/gif" className="hidden" onChange={handleImageUpload} />
                   {(artist.profileImage || previewUrl) && !imageChanged && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRemoveImage}
-                      className="text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <X className="w-4 h-4 mr-1" />
-                      제거
+                    <Button type="button" variant="outline" size="sm" onClick={handleRemoveImage} className="text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600">
+                      <X className="w-4 h-4 mr-1" />제거
                     </Button>
                   )}
-
-                  {/* 새 이미지가 있는 경우 제거 버튼 */}
                   {imageChanged && previewUrl && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRemoveImage}
-                      className="text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <X className="w-4 h-4 mr-1" />
-                      제거
+                    <Button type="button" variant="outline" size="sm" onClick={handleRemoveImage} className="text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600">
+                      <X className="w-4 h-4 mr-1" />제거
                     </Button>
                   )}
-
-                  {/* 복원 버튼 (이미지가 변경된 경우에만 표시) */}
                   {imageChanged && artist.profileImage && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRestoreImage}
-                      className="text-gray-600 border-gray-300 hover:bg-gray-50"
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={handleRestoreImage} className="text-gray-600 border-gray-300 hover:bg-gray-50">
                       원래대로
                     </Button>
                   )}
                 </div>
-
-                {/* 업로드된 파일 정보 */}
                 {uploadedImage && (
-                  <p className="text-xs text-gray-500">
-                    {uploadedImage.name} ({Math.round(uploadedImage.size / 1024)} KB)
-                  </p>
+                  <p className="text-xs text-gray-500">{uploadedImage.name} ({Math.round(uploadedImage.size / 1024)} KB)</p>
                 )}
               </div>
             </div>
@@ -437,70 +395,54 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
                 </Label>
                 <Input
                   id="voiceartistName"
-                  {...register("voiceartistName", { 
+                  {...register("voiceartistName", {
                     required: "성우 이름은 필수입니다",
-                    maxLength: {
-                      value: 100,
-                      message: "성우 이름은 100자를 초과할 수 없습니다"
-                    }
+                    maxLength: { value: 100, message: "성우 이름은 100자를 초과할 수 없습니다" }
                   })}
                   className="border-gray-300"
-                  defaultValue={artist.voiceartistName || ""}
                 />
                 {errors.voiceartistName && (
-                  <p className="text-sm text-red-500">
-                    {String(errors.voiceartistName.message)}
-                  </p>
+                  <p className="text-sm text-red-500">{String(errors.voiceartistName.message)}</p>
                 )}
               </div>
-              
-              {/* 성별 - 라디오 버튼 */}
+
+              {/* 성별 - accessmedia 스타일 라디오 버튼 */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  성별
-                </Label>
-                <Controller
-                  name="voiceartistGender"
-                  control={control}
-                  render={({ field }) => (
-                    <RadioGroup
-                      value={field.value || "male"}
-                      onValueChange={field.onChange}
-                      className="flex gap-6 pt-2"
+                <Label className="text-sm font-medium">성별</Label>
+                <div className="flex gap-4">
+                  {GENDER_OPTIONS.map((option) => (
+                    <div
+                      key={option.value}
+                      className={`flex items-center space-x-2 hover:bg-gray-50 p-2 rounded-md border cursor-pointer ${
+                        watchedGender === option.value ? 'border-[#4da34c] bg-[#f5fbf5]' : 'border-gray-200'
+                      }`}
+                      onClick={() => setValue("voiceartistGender", option.value)}
                     >
-                      {GENDER_OPTIONS.map((option) => (
-                        <div key={option.value} className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value={option.value}
-                            id={`gender-${option.value}`}
-                            className="border-gray-400 text-[#4da34c] focus:ring-[#4da34c]"
-                          />
-                          <Label
-                            htmlFor={`gender-${option.value}`}
-                            className="text-sm font-normal cursor-pointer"
-                          >
-                            {option.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  )}
-                />
+                      <input
+                        type="radio"
+                        id={`gender-${option.value}`}
+                        name="voiceartistGender"
+                        value={option.value}
+                        className="form-radio h-4 w-4 text-[#4da34c]"
+                        checked={watchedGender === option.value}
+                        onChange={() => setValue("voiceartistGender", option.value)}
+                      />
+                      <Label htmlFor={`gender-${option.value}`} className="text-sm cursor-pointer">
+                        {option.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              
+
               {/* 레벨 */}
               <div className="space-y-2">
-                <Label htmlFor="voiceartistLevel" className="text-sm font-medium">
-                  레벨
-                </Label>
+                <Label htmlFor="voiceartistLevel" className="text-sm font-medium">레벨</Label>
                 <Controller
                   name="voiceartistLevel"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      value={(field.value || 1).toString()}
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                    >
+                    <Select value={(field.value || 1).toString()} onValueChange={(value) => field.onChange(parseInt(value))}>
                       <SelectTrigger className="border-gray-300">
                         <SelectValue placeholder="레벨 선택" />
                       </SelectTrigger>
@@ -509,9 +451,7 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
                           <SelectItem key={option.value} value={option.value.toString()}>
                             <div className="flex items-center">
                               <span>{option.label}</span>
-                              {option.value >= 7 && (
-                                <Star className="ml-1 h-3.5 w-3.5 text-purple-500 fill-purple-500" />
-                              )}
+                              {option.value >= 7 && <Star className="ml-1 h-3.5 w-3.5 text-purple-500 fill-purple-500" />}
                             </div>
                           </SelectItem>
                         ))}
@@ -520,109 +460,142 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
                   )}
                 />
               </div>
-              
+
               {/* 지역 */}
               <div className="space-y-2">
-                <Label htmlFor="voiceartistLocation" className="text-sm font-medium">
-                  거주 지역
-                </Label>
-                <Input
-                  id="voiceartistLocation"
-                  {...register("voiceartistLocation", {
-                    maxLength: {
-                      value: 100,
-                      message: "거주 지역은 100자를 초과할 수 없습니다"
-                    }
-                  })}
-                  className="border-gray-300"
-                  defaultValue={artist.voiceartistLocation || ""}
-                />
-                {errors.voiceartistLocation && (
-                  <p className="text-sm text-red-500">
-                    {String(errors.voiceartistLocation.message)}
-                  </p>
-                )}
+                <Label htmlFor="voiceartistLocation" className="text-sm font-medium">거주 지역</Label>
+                <Input id="voiceartistLocation" {...register("voiceartistLocation")} className="border-gray-300" />
               </div>
-              
+
               {/* 연락처 */}
               <div className="space-y-2">
-                <Label htmlFor="voiceartistPhone" className="text-sm font-medium">
-                  연락처
-                </Label>
-                <Input
-                  id="voiceartistPhone"
-                  type="tel"
-                  {...register("voiceartistPhone", {
-                    maxLength: {
-                      value: 50,
-                      message: "연락처는 50자를 초과할 수 없습니다"
-                    }
-                  })}
-                  className="border-gray-300"
-                  defaultValue={artist.voiceartistPhone || ""}
-                />
-                {errors.voiceartistPhone && (
-                  <p className="text-sm text-red-500">
-                    {String(errors.voiceartistPhone.message)}
-                  </p>
-                )}
+                <Label htmlFor="voiceartistPhone" className="text-sm font-medium">연락처</Label>
+                <Input id="voiceartistPhone" type="tel" {...register("voiceartistPhone")} className="border-gray-300" />
               </div>
-              
+
               {/* 이메일 */}
               <div className="space-y-2">
-                <Label htmlFor="voiceartistEmail" className="text-sm font-medium">
-                  이메일
-                </Label>
-                <Input
-                  id="voiceartistEmail"
-                  type="email"
-                  {...register("voiceartistEmail", {
-                    maxLength: {
-                      value: 255,
-                      message: "이메일은 255자를 초과할 수 없습니다"
-                    },
-                    pattern: {
-                      value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                      message: "유효한 이메일 주소를 입력하세요"
-                    }
-                  })}
-                  className="border-gray-300"
-                  defaultValue={artist.voiceartistEmail || ""}
-                />
-                {errors.voiceartistEmail && (
-                  <p className="text-sm text-red-500">
-                    {String(errors.voiceartistEmail.message)}
-                  </p>
-                )}
+                <Label htmlFor="voiceartistEmail" className="text-sm font-medium">이메일</Label>
+                <Input id="voiceartistEmail" type="email" {...register("voiceartistEmail")} className="border-gray-300" />
               </div>
             </div>
-            
+
             {/* 메모 */}
             <div className="space-y-2">
-              <Label htmlFor="voiceartistMemo" className="text-sm font-medium">
-                메모
-              </Label>
-              <Textarea
-                id="voiceartistMemo"
-                {...register("voiceartistMemo")}
-                className="border-gray-300"
-                rows={4}
-                defaultValue={artist.voiceartistMemo || ""}
-              />
+              <Label htmlFor="voiceartistMemo" className="text-sm font-medium">메모</Label>
+              <Textarea id="voiceartistMemo" {...register("voiceartistMemo")} className="border-gray-300" rows={4} />
             </div>
-            
+
+            {/* 전문 영역 섹션 */}
+            <div className="space-y-4 p-6 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">전문 영역</h3>
+                <Button
+                  type="button"
+                  onClick={handleAddExpertise}
+                  className="bg-[#4da34c] hover:bg-[#3d8c3c]"
+                  disabled={fields.length >= 5}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  전문 영역 추가
+                </Button>
+              </div>
+
+              {fields.map((field, index) => (
+                <Card key={field.id} className="border border-gray-200 bg-white">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-medium">전문 영역 #{index + 1}</h4>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        disabled={fields.length <= 1}
+                        className="h-8 w-8 hover:bg-red-50 hover:text-red-500"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">도메인</Label>
+                        <Controller
+                          name={`expertise.${index}.domain`}
+                          control={control}
+                          render={({ field }) => (
+                            <Select value={field.value || "movie"} onValueChange={field.onChange}>
+                              <SelectTrigger className="border-gray-300">
+                                <SelectValue placeholder="도메인 선택" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DOMAIN_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+
+                      {watchedExpertise?.[index]?.domain === "other" && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">기타 도메인 설명</Label>
+                          <Input
+                            {...register(`expertise.${index}.domainOther`)}
+                            placeholder="도메인을 설명해주세요"
+                            className="border-gray-300"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">등급 (1-9)</Label>
+                        <Controller
+                          name={`expertise.${index}.grade`}
+                          control={control}
+                          render={({ field }) => (
+                            <div className="flex items-center space-x-4">
+                              <input
+                                type="range"
+                                min="1"
+                                max="9"
+                                step="1"
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                value={field.value || 5}
+                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              />
+                              <div className="flex items-center">
+                                {Array.from({ length: 9 }).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < (field.value || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="font-medium min-w-[40px] text-center">{field.value || 5}/9</span>
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
             {/* 버튼 영역 */}
             <div className="pt-6 flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push(`/voiceartists/${artistId}`)}
-                className="px-6"
-              >
+              <Button type="button" variant="outline" onClick={() => router.push(`/voiceartists/${artistId}`)} className="px-6">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 뒤로
               </Button>
-              
+
               <div className="space-x-2">
                 <Button
                   type="button"
@@ -632,11 +605,7 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
                 >
                   취소
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-[#4da34c] hover:bg-[#3d8c3c]"
-                >
+                <Button type="submit" disabled={isSubmitting} className="bg-[#4da34c] hover:bg-[#3d8c3c]">
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -654,16 +623,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
           </form>
         </CardContent>
       </Card>
-      
-      {/* 디버깅 정보 (개발 시에만 표시) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h3 className="text-sm font-bold mb-2">디버깅 정보:</h3>
-          <pre className="text-xs overflow-auto max-h-[300px]">
-            {JSON.stringify({artist, currentFormValues: currentValues}, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 }
