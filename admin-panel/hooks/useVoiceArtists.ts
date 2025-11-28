@@ -154,26 +154,26 @@ export const useCreateVoiceArtist = () => {
 // 성우 수정 훅
 export const useUpdateVoiceArtist = (id: number) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: any) => {
       console.log("API 요청 전 원본 데이터 (수정):", data);
-      
-      // undefined 값을 빈 문자열로 변환하고 필드명 수정
+
+      // undefined나 빈 문자열은 null로 변환 (백엔드 validation 통과를 위해)
       const sanitizedData = {
-        voiceartist_name: data.voiceartistName || '',
-        voiceartist_gender: data.voiceartistGender || '',
-        voiceartist_location: data.voiceartistLocation || '',
+        voiceartist_name: data.voiceartistName || null,
+        voiceartist_gender: data.voiceartistGender || null,
+        voiceartist_location: data.voiceartistLocation || null,
         voiceartist_level: data.voiceartistLevel || null,
-        voiceartist_phone: data.voiceartistPhone || '',
-        voiceartist_email: data.voiceartistEmail || '',
-        voiceartist_memo: data.voiceartistMemo || '',
+        voiceartist_phone: data.voiceartistPhone || null,
+        voiceartist_email: data.voiceartistEmail || null,
+        voiceartist_memo: data.voiceartistMemo || null,
         profile_image: data.profileImage || null,
         expertise: data.expertise || []
       };
-      
+
       console.log("API 요청 - 성우 수정 (정제 후):", sanitizedData);
-      
+
       const response = await api.put(`/admin/api/voiceartists/${id}`, sanitizedData);
       return response.data;
     },
