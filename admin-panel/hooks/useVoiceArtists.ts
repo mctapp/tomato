@@ -208,22 +208,19 @@ export const useDeleteVoiceArtist = () => {
 // 성우 프로필 이미지 업로드 훅
 export const useUploadVoiceArtistProfileImage = (id: number) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-      
+
+      // FormData를 보낼 때는 Content-Type 헤더를 설정하지 않아야 함
+      // axios가 자동으로 multipart/form-data와 boundary를 설정함
       const response = await api.post(
         `/admin/api/voiceartists/${id}/profile-image`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
+        formData
       );
-      
+
       return response.data;
     },
     onSuccess: () => {
