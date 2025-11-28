@@ -31,6 +31,10 @@ class Settings(BaseSettings):
 
     # Redis
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
+    REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "")
 
     # IP 필터
     ENABLE_IP_FILTER: bool = os.getenv("ENABLE_IP_FILTER", "true").lower() == "true"
