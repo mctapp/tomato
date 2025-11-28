@@ -288,30 +288,66 @@ class S3Service:
             # 객체 리스트를 효율적으로 처리하기 위한 페이지네이션 사용
             public_objects = []
             private_objects = []
-            
+
             # 공개 버킷 객체 수집
             paginator = self.s3_client.get_paginator('list_objects_v2')
-            
+
+            # 버킷 이름이 같은 경우 경고 (중복 카운트 방지)
+            same_bucket = self.public_bucket == self.private_bucket
+            if same_bucket:
+                logger.warning(f"PUBLIC_BUCKET_NAME and PRIVATE_BUCKET_NAME are the same: {self.public_bucket}. "
+                             "Files will be classified based on S3 key prefix.")
+
             # 공개 버킷 페이지네이션
-            for page in paginator.paginate(Bucket=self.public_bucket):
-                if 'Contents' in page:
-                    public_objects.extend(page['Contents'])
-            
-            # 비공개 버킷 페이지네이션
-            for page in paginator.paginate(Bucket=self.private_bucket):
-                if 'Contents' in page:
-                    private_objects.extend(page['Contents'])
-            
+            try:
+                for page in paginator.paginate(Bucket=self.public_bucket):
+                    if 'Contents' in page:
+                        public_objects.extend(page['Contents'])
+            except ClientError as e:
+                logger.error(f"Error listing public bucket {self.public_bucket}: {str(e)}")
+                # 공개 버킷 접근 실패 시 빈 리스트로 진행
+
+            # 비공개 버킷 페이지네이션 (버킷이 같으면 건너뜀)
+            if not same_bucket:
+                try:
+                    for page in paginator.paginate(Bucket=self.private_bucket):
+                        if 'Contents' in page:
+                            private_objects.extend(page['Contents'])
+                except ClientError as e:
+                    logger.error(f"Error listing private bucket {self.private_bucket}: {str(e)}")
+                    # 비공개 버킷 접근 실패 시 빈 리스트로 진행
+            else:
+                # 같은 버킷인 경우 파일 경로로 공개/비공개 구분
+                # 공개 경로 패턴: movies/posters/, staffs/*/profile-, voiceartists/*/profile-, guidelines/
+                public_prefixes = ('movies/posters/', 'staffs/', 'voiceartists/', 'guidelines/')
+                private_prefixes = ('movies/signatures/', 'access-assets/', 'credits/')
+
+                all_objects = public_objects.copy()
+                public_objects = []
+
+                for obj in all_objects:
+                    key = obj['Key']
+                    # 비공개 경로에 해당하는지 먼저 확인
+                    is_private = any(key.startswith(prefix) for prefix in private_prefixes)
+                    # 크레딧 이미지 패턴 확인 (staffs/{id}/portfolios/{id}/credit-)
+                    if '/credit-' in key or '/signatures/' in key:
+                        is_private = True
+
+                    if is_private:
+                        private_objects.append(obj)
+                    else:
+                        public_objects.append(obj)
+
             # 통계 계산
             public_count = len(public_objects)
             private_count = len(private_objects)
-            
+
             public_size = sum(obj['Size'] for obj in public_objects)
             private_size = sum(obj['Size'] for obj in private_objects)
-            
+
             # 파일 타입별 통계
             file_types = {}
-            
+
             for obj in public_objects + private_objects:
                 ext = os.path.splitext(obj['Key'])[1].lower()
                 if ext in file_types:
@@ -319,7 +355,7 @@ class S3Service:
                     file_types[ext]['size'] += obj['Size']
                 else:
                     file_types[ext] = {'count': 1, 'size': obj['Size']}
-            
+
             # 일별 업로드 통계
             daily_stats = {}
             for obj in public_objects + private_objects:
@@ -329,9 +365,10 @@ class S3Service:
                     daily_stats[date_str]['size'] += obj['Size']
                 else:
                     daily_stats[date_str] = {'count': 1, 'size': obj['Size']}
-            
-            logger.info(f"Generated storage stats: {public_count} public files, {private_count} private files")
-            
+
+            logger.info(f"Generated storage stats: {public_count} public files, {private_count} private files "
+                       f"(public_bucket={self.public_bucket}, private_bucket={self.private_bucket}, same_bucket={same_bucket})")
+
             return {
                 "public_files_count": public_count,
                 "private_files_count": private_count,
@@ -340,9 +377,14 @@ class S3Service:
                 "total_files_count": public_count + private_count,
                 "total_storage_bytes": public_size + private_size,
                 "file_types": file_types,
-                "daily_stats": daily_stats
+                "daily_stats": daily_stats,
+                "bucket_info": {
+                    "public_bucket": self.public_bucket,
+                    "private_bucket": self.private_bucket,
+                    "same_bucket": same_bucket
+                }
             }
-            
+
         except ClientError as e:
             logger.error(f"Error getting storage stats: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to get storage statistics: {str(e)}")
