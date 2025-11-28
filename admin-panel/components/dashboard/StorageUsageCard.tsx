@@ -18,8 +18,8 @@ export function StorageUsageCard() {
       <>
         <CardContent className="pt-6">
           <Skeleton className="h-64 w-full rounded-lg mb-4" />
-          <div className="grid grid-cols-4 gap-2">
-            {Array(4).fill(0).map((_, i) => (
+          <div className="grid grid-cols-3 gap-2">
+            {Array(3).fill(0).map((_, i) => (
               <div key={i} className="text-center">
                 <Skeleton className="h-4 w-full mb-1" />
                 <Skeleton className="h-6 w-4/5 mx-auto" />
@@ -78,17 +78,13 @@ export function StorageUsageCard() {
         </div>
 
         {/* 주요 통계 요약 - 더 작게 표시 */}
-        <div className="grid grid-cols-4 gap-2 text-center">
+        <div className="grid grid-cols-3 gap-2 text-center">
           <div>
-            <p className="text-xs text-muted-foreground">총 파일</p>
-            <p className="text-sm font-semibold">{data.total_files_count}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">공개 파일</p>
+            <p className="text-xs text-muted-foreground public-files-label">공개 파일</p>
             <p className="text-sm font-semibold">{data.public_files_count}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">비공개 파일</p>
+            <p className="text-xs text-muted-foreground private-files-label">비공개 파일</p>
             <p className="text-sm font-semibold">{data.private_files_count}</p>
           </div>
           <div>

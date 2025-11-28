@@ -13,7 +13,7 @@ export function StorageUsageChart({ stats }: StorageUsageChartProps) {
     { name: '비공개 파일', value: stats.private_storage_bytes }
   ];
 
-  const COLORS = ['#4ade80', '#f87171']; // 녹색(공개), 빨간색(비공개)
+  const COLORS = ['#22c55e', '#f87171']; // 녹색(공개), 빨간색(비공개)
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;

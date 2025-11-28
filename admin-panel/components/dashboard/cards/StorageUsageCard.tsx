@@ -18,17 +18,27 @@ const StorageUsageCard = () => {
         }
 
         /* 차트 색상 - 공개 파일(녹색), 비공개 파일(빨간색) */
-        .storage-usage-card .recharts-pie-sector:nth-child(1) path {
-          fill: #4ade80 !important;
+        .storage-usage-card .recharts-pie .recharts-pie-sector:first-of-type path {
+          fill: #22c55e !important;
         }
 
-        .storage-usage-card .recharts-pie-sector:nth-child(2) path {
+        .storage-usage-card .recharts-pie .recharts-pie-sector:nth-of-type(2) path {
           fill: #f87171 !important;
+        }
+
+        /* 레전드 색상도 맞추기 */
+        .storage-usage-card .recharts-legend-item:first-child .recharts-surface {
+          color: #22c55e !important;
+        }
+
+        .storage-usage-card .recharts-legend-item:first-child path,
+        .storage-usage-card .recharts-legend-item:first-child rect {
+          fill: #22c55e !important;
         }
 
         /* 라벨 색상도 차트와 일치 */
         .storage-usage-card .public-files-label {
-          color: #4ade80 !important;
+          color: #22c55e !important;
         }
 
         .storage-usage-card .private-files-label {
