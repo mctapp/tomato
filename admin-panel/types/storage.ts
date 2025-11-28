@@ -18,4 +18,9 @@ export interface StorageStats {
       size: number;
     }
   };
+  bucket_info?: {
+    public_bucket: string;
+    private_bucket: string;
+    same_bucket: boolean;
+  };
 }
