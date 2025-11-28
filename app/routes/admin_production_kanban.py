@@ -461,7 +461,7 @@ def get_filter_data(db: Session) -> Dict:
 
 # ── API 엔드포인트 ──────────────────────────────────────────────────────
 
-@router.get("/", response_model=KanbanResponse)
+@router.get("", response_model=KanbanResponse)
 async def get_kanban_data(
     status_filter: Optional[str] = None,
     media_type_filter: Optional[str] = None,

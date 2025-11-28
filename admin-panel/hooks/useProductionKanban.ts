@@ -70,9 +70,9 @@ export function useProductionKanban() {
     queryKey: ['production-kanban', mediaTypeFilter, speedTypeFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (mediaTypeFilter !== 'all') params.append('mediaTypeFilter', mediaTypeFilter);
-      if (speedTypeFilter !== 'all') params.append('speedTypeFilter', speedTypeFilter);
-      
+      if (mediaTypeFilter !== 'all') params.append('media_type_filter', mediaTypeFilter);
+      if (speedTypeFilter !== 'all') params.append('speed_type_filter', speedTypeFilter);
+
       const response = await fetchApi<KanbanResponse>(`/admin/api/production/kanban?${params.toString()}`);
       return response;
     },
