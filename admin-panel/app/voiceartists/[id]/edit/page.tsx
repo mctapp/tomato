@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   Card,
@@ -25,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   AlertCircle,
   ArrowLeft,
@@ -45,12 +47,10 @@ import {
 } from "@/hooks/useVoiceArtists";
 import { VoiceArtist, VoiceArtistExpertise } from "@/types/voiceartists";
 
-// 성별 옵션
+// 성별 옵션 (남/여만)
 const GENDER_OPTIONS = [
   { value: "male", label: "남성" },
-  { value: "female", label: "여성" },
-  { value: "other", label: "기타" },
-  { value: "prefer_not_to_say", label: "미표시" }
+  { value: "female", label: "여성" }
 ];
 
 // 레벨 옵션 (1~9)
@@ -61,10 +61,12 @@ const LEVEL_OPTIONS = Array.from({ length: 9 }, (_, i) => ({
 
 function EditVoiceArtistPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const artistId = parseInt(params.id, 10);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isFormReady, setIsFormReady] = useState(false);
 
   // 프로필 이미지 관련 상태
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -72,7 +74,7 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
   const [imageChanged, setImageChanged] = useState(false);
 
   // 성우 데이터 조회
-  const { data: artist, isLoading, isError, error } = useVoiceArtist(artistId);
+  const { data: artist, isLoading, isError, error, refetch } = useVoiceArtist(artistId);
 
   // 뮤테이션 훅
   const updateArtistMutation = useUpdateVoiceArtist(artistId);
@@ -154,37 +156,30 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
   
   // 성우 데이터로 폼 초기화
   useEffect(() => {
-    if (artist) {
+    if (artist && !isFormReady) {
       console.log("Artist data received:", artist);
-      
+
+      // 성별 기본값: 남/여 중 하나가 아니면 male로 설정
+      const gender = (artist.voiceartistGender === "male" || artist.voiceartistGender === "female")
+        ? artist.voiceartistGender
+        : "male";
+
       // 데이터가 null이거나 undefined인 경우 기본값으로 처리
-      reset({
+      const formData = {
         voiceartistName: artist.voiceartistName || "",
-        voiceartistGender: artist.voiceartistGender || "prefer_not_to_say",
+        voiceartistGender: gender,
         voiceartistLocation: artist.voiceartistLocation || "",
         voiceartistLevel: artist.voiceartistLevel || 1,
         voiceartistPhone: artist.voiceartistPhone || "",
         voiceartistEmail: artist.voiceartistEmail || "",
         voiceartistMemo: artist.voiceartistMemo || ""
-      });
-      
-      // 명시적으로 각 필드 설정
-      setValue("voiceartistName", artist.voiceartistName || "");
-      setValue("voiceartistGender", artist.voiceartistGender || "prefer_not_to_say");
-      setValue("voiceartistLocation", artist.voiceartistLocation || "");
-      setValue("voiceartistLevel", artist.voiceartistLevel || 1);
-      setValue("voiceartistPhone", artist.voiceartistPhone || "");
-      setValue("voiceartistEmail", artist.voiceartistEmail || "");
-      setValue("voiceartistMemo", artist.voiceartistMemo || "");
-      
-      console.log("Form reset with data");
+      };
+
+      reset(formData);
+      setIsFormReady(true);
+      console.log("Form initialized with data:", formData);
     }
-  }, [artist, reset, setValue]);
-  
-  // 디버깅: 폼 값 변경 시 로그
-  useEffect(() => {
-    console.log("Current form values:", currentValues);
-  }, [currentValues]);
+  }, [artist, reset, isFormReady]);
   
   // 폼 제출 핸들러
   const onSubmit = async (data: any) => {
@@ -218,6 +213,10 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
           toast.error("성우 정보는 업데이트되었으나, 프로필 이미지 업로드에 실패했습니다.");
         }
       }
+
+      // 캐시 무효화 후 새 데이터 가져오기
+      await queryClient.invalidateQueries({ queryKey: ['voiceArtist', artistId] });
+      await queryClient.invalidateQueries({ queryKey: ['voiceArtists'] });
 
       toast.success("성우 정보가 성공적으로 업데이트되었습니다.");
       router.push(`/voiceartists/${artistId}`);
@@ -447,31 +446,36 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
                 )}
               </div>
               
-              {/* 성별 */}
+              {/* 성별 - 라디오 버튼 */}
               <div className="space-y-2">
-                <Label htmlFor="voiceartistGender" className="text-sm font-medium">
+                <Label className="text-sm font-medium">
                   성별
                 </Label>
                 <Controller
                   name="voiceartistGender"
                   control={control}
-                  defaultValue={artist.voiceartistGender || "prefer_not_to_say"}
                   render={({ field }) => (
-                    <Select
-                      value={field.value || "prefer_not_to_say"}
+                    <RadioGroup
+                      value={field.value || "male"}
                       onValueChange={field.onChange}
+                      className="flex gap-6 pt-2"
                     >
-                      <SelectTrigger className="border-gray-300">
-                        <SelectValue placeholder="성별 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {GENDER_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
+                      {GENDER_OPTIONS.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value={option.value}
+                            id={`gender-${option.value}`}
+                            className="border-gray-400 text-[#4da34c] focus:ring-[#4da34c]"
+                          />
+                          <Label
+                            htmlFor={`gender-${option.value}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
                             {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
                   )}
                 />
               </div>
@@ -484,7 +488,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
                 <Controller
                   name="voiceartistLevel"
                   control={control}
-                  defaultValue={artist.voiceartistLevel || 1}
                   render={({ field }) => (
                     <Select
                       value={(field.value || 1).toString()}
