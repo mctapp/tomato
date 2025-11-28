@@ -204,10 +204,13 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       await updateArtistMutation.mutateAsync(updateData);
 
       // 이미지가 변경된 경우에만 업로드
+      console.log("Image state check:", { imageChanged, hasUploadedImage: !!uploadedImage });
+
       if (imageChanged && uploadedImage) {
+        console.log("Starting image upload...", uploadedImage.name);
         try {
-          await uploadImageMutation.mutateAsync(uploadedImage);
-          console.log("Profile image uploaded successfully");
+          const uploadResult = await uploadImageMutation.mutateAsync(uploadedImage);
+          console.log("Profile image uploaded successfully:", uploadResult);
         } catch (uploadError) {
           console.error("Profile image upload error:", uploadError);
           toast.error("성우 정보는 업데이트되었으나, 프로필 이미지 업로드에 실패했습니다.");
@@ -215,8 +218,13 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       }
 
       // 캐시 무효화 후 새 데이터 가져오기
+      console.log("Invalidating cache...");
       await queryClient.invalidateQueries({ queryKey: ['voiceArtist', artistId] });
       await queryClient.invalidateQueries({ queryKey: ['voiceArtists'] });
+
+      // 새 데이터 강제로 다시 가져오기
+      await refetch();
+      console.log("Cache invalidated and refetched");
 
       toast.success("성우 정보가 성공적으로 업데이트되었습니다.");
       router.push(`/voiceartists/${artistId}`);
