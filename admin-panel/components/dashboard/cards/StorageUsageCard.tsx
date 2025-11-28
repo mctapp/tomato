@@ -18,21 +18,30 @@ const StorageUsageCard = () => {
         }
 
         /* 차트 색상 - 공개 파일(녹색), 비공개 파일(빨간색) */
-        .storage-usage-card .recharts-pie .recharts-pie-sector:first-of-type path {
+        .storage-usage-card .recharts-pie-sector path[fill="#22c55e"],
+        .storage-usage-card .recharts-layer.recharts-pie-sector:first-of-type path,
+        .storage-usage-card .recharts-pie > g:first-of-type path,
+        .storage-usage-card .recharts-pie g.recharts-layer:nth-child(1) path {
           fill: #22c55e !important;
         }
 
-        .storage-usage-card .recharts-pie .recharts-pie-sector:nth-of-type(2) path {
+        .storage-usage-card .recharts-pie-sector path[fill="#f87171"],
+        .storage-usage-card .recharts-layer.recharts-pie-sector:nth-of-type(2) path,
+        .storage-usage-card .recharts-pie > g:nth-of-type(2) path,
+        .storage-usage-card .recharts-pie g.recharts-layer:nth-child(2) path {
           fill: #f87171 !important;
         }
 
-        /* 레전드 색상도 맞추기 */
-        .storage-usage-card .recharts-legend-item:first-child .recharts-surface {
+        /* 레전드 색상 - 공개 파일(녹색) */
+        .storage-usage-card .recharts-legend-item:first-child .recharts-surface,
+        .storage-usage-card .recharts-legend-wrapper li:first-child svg {
           color: #22c55e !important;
         }
 
         .storage-usage-card .recharts-legend-item:first-child path,
-        .storage-usage-card .recharts-legend-item:first-child rect {
+        .storage-usage-card .recharts-legend-item:first-child rect,
+        .storage-usage-card .recharts-legend-wrapper li:first-child path,
+        .storage-usage-card .recharts-legend-wrapper li:first-child rect {
           fill: #22c55e !important;
         }
 
