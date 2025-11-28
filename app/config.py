@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     PRIVATE_BUCKET_NAME: str = os.getenv("PRIVATE_BUCKET_NAME", "")
     PUBLIC_BUCKET_NAME: str = os.getenv("PUBLIC_BUCKET_NAME", "")
 
+    # AWS KMS/S3 암호화 설정
+    AWS_KMS_KEY_ID: str = os.getenv("AWS_KMS_KEY_ID", "")
+    AWS_S3_ENCRYPTION_TYPE: str = os.getenv("AWS_S3_ENCRYPTION_TYPE", "AES256")
+    AWS_S3_BUCKET_KEY_ENABLED: bool = os.getenv("AWS_S3_BUCKET_KEY_ENABLED", "false").lower() == "true"
+
     # Redis
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
