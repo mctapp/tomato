@@ -17,22 +17,22 @@ const StorageUsageCard = () => {
           padding-top: 0 !important;
         }
 
-        /* 차트 색상 통일 - 각 섹터가 다른 색상을 갖도록 */
-        .storage-usage-card .recharts-sector:nth-of-type(1) {
-          fill: #ff6246 !important;
+        /* 차트 색상 - 공개 파일(녹색), 비공개 파일(빨간색) */
+        .storage-usage-card .recharts-pie-sector:nth-child(1) path {
+          fill: #4ade80 !important;
         }
-        
-        .storage-usage-card .recharts-sector:nth-of-type(2) {
-          fill: #4da34c !important;
+
+        .storage-usage-card .recharts-pie-sector:nth-child(2) path {
+          fill: #f87171 !important;
         }
 
         /* 라벨 색상도 차트와 일치 */
         .storage-usage-card .public-files-label {
-          color: #4da34c !important;
+          color: #4ade80 !important;
         }
-        
+
         .storage-usage-card .private-files-label {
-          color: #ff6246 !important;
+          color: #f87171 !important;
         }
         
         /* "마지막 갱신:" 텍스트 완전히 제거 */
