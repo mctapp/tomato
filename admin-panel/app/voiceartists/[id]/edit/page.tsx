@@ -1,7 +1,7 @@
 // app/voiceartists/[id]/edit/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { toast } from "sonner";
@@ -90,7 +90,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isFormReady, setIsFormReady] = useState(false);
 
   // 프로필 이미지 관련 상태
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -149,7 +148,35 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
     setImageChanged(false);
   }, [previewUrl, uploadedImage]);
 
-  // 폼 설정
+  // artist 데이터로 폼 values 생성
+  const formValues = useMemo(() => {
+    if (!artist) return undefined;
+
+    const gender = (artist.voiceartistGender === "male" || artist.voiceartistGender === "female")
+      ? artist.voiceartistGender
+      : "male";
+
+    const expertiseData = artist.expertise && artist.expertise.length > 0
+      ? artist.expertise.map((exp: VoiceArtistExpertise) => ({
+          domain: exp.domain || "movie",
+          domainOther: exp.domainOther || "",
+          grade: exp.grade || 5
+        }))
+      : [{ domain: "movie", grade: 5 }];
+
+    return {
+      voiceartistName: artist.voiceartistName || "",
+      voiceartistGender: gender,
+      voiceartistLocation: artist.voiceartistLocation || "",
+      voiceartistLevel: artist.voiceartistLevel || 1,
+      voiceartistPhone: artist.voiceartistPhone || "",
+      voiceartistEmail: artist.voiceartistEmail || "",
+      voiceartistMemo: artist.voiceartistMemo || "",
+      expertise: expertiseData
+    };
+  }, [artist]);
+
+  // 폼 설정 - values prop으로 artist 데이터 자동 동기화
   const {
     register,
     control,
@@ -168,7 +195,8 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       voiceartistEmail: "",
       voiceartistMemo: "",
       expertise: [{ domain: "movie", grade: 5 }]
-    }
+    },
+    values: formValues  // artist 데이터가 로드되면 자동으로 폼 값 업데이트
   });
 
   // 전문 영역 필드 배열
@@ -179,41 +207,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
 
   const watchedExpertise = watch("expertise");
   const watchedGender = watch("voiceartistGender");
-
-  // 성우 데이터로 폼 초기화
-  useEffect(() => {
-    if (artist && !isFormReady) {
-      console.log("Artist data received:", artist);
-
-      const gender = (artist.voiceartistGender === "male" || artist.voiceartistGender === "female")
-        ? artist.voiceartistGender
-        : "male";
-
-      // expertise 데이터 변환
-      const expertiseData = artist.expertise && artist.expertise.length > 0
-        ? artist.expertise.map((exp: VoiceArtistExpertise) => ({
-            domain: exp.domain || "movie",
-            domainOther: exp.domainOther || "",
-            grade: exp.grade || 5
-          }))
-        : [{ domain: "movie", grade: 5 }];
-
-      const formData = {
-        voiceartistName: artist.voiceartistName || "",
-        voiceartistGender: gender,
-        voiceartistLocation: artist.voiceartistLocation || "",
-        voiceartistLevel: artist.voiceartistLevel || 1,
-        voiceartistPhone: artist.voiceartistPhone || "",
-        voiceartistEmail: artist.voiceartistEmail || "",
-        voiceartistMemo: artist.voiceartistMemo || "",
-        expertise: expertiseData
-      };
-
-      reset(formData);
-      setIsFormReady(true);
-      console.log("Form initialized with data:", formData);
-    }
-  }, [artist, reset, isFormReady]);
 
   // 전문 영역 추가
   const handleAddExpertise = () => {
