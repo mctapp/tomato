@@ -1,7 +1,7 @@
 // app/voiceartists/[id]/edit/page.tsx
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { toast } from "sonner";
@@ -83,10 +83,16 @@ interface FormData {
   }[];
 }
 
-function EditVoiceArtistPage({ params }: { params: { id: string } }) {
+// 폼 컴포넌트 - artist 데이터가 확실히 로드된 후에만 렌더링됨
+function VoiceArtistEditForm({
+  artist,
+  artistId
+}: {
+  artist: VoiceArtist;
+  artistId: number;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const artistId = parseInt(params.id, 10);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -95,9 +101,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageChanged, setImageChanged] = useState(false);
-
-  // 성우 데이터 조회
-  const { data: artist, isLoading, isError, error, refetch } = useVoiceArtist(artistId);
 
   // 뮤테이션 훅
   const updateArtistMutation = useUpdateVoiceArtist(artistId);
@@ -148,76 +151,53 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
     setImageChanged(false);
   }, [previewUrl, uploadedImage]);
 
-  // 폼 설정
+  // API 데이터에서 초기값 추출 (snake_case와 camelCase 모두 지원)
+  const artistData = artist as any;
+  const initialName = artist.voiceartistName || artistData.voiceartist_name || "";
+  const initialGender = artist.voiceartistGender || artistData.voiceartist_gender || "male";
+  const initialLocation = artist.voiceartistLocation || artistData.voiceartist_location || "";
+  const initialLevel = artist.voiceartistLevel || artistData.voiceartist_level || 1;
+  const initialPhone = artist.voiceartistPhone || artistData.voiceartist_phone || "";
+  const initialEmail = artist.voiceartistEmail || artistData.voiceartist_email || "";
+  const initialMemo = artist.voiceartistMemo || artistData.voiceartist_memo || "";
+
+  const validGender = (initialGender === "male" || initialGender === "female") ? initialGender : "male";
+
+  const initialExpertise = artist.expertise && artist.expertise.length > 0
+    ? artist.expertise.map((exp: any) => ({
+        domain: exp.domain || "movie",
+        domainOther: exp.domainOther || exp.domain_other || "",
+        grade: exp.grade || 5
+      }))
+    : [{ domain: "movie", grade: 5 }];
+
+  // 디버깅 로그
+  console.log("=== VoiceArtistEditForm initialized ===");
+  console.log("artist object:", artist);
+  console.log("initialName:", initialName);
+  console.log("initialGender:", initialGender);
+  console.log("initialLevel:", initialLevel);
+
+  // 폼 설정 - artist 데이터로 직접 초기화
   const {
     register,
     control,
     handleSubmit,
-    reset,
     formState: { errors },
     setValue,
     watch
   } = useForm<FormData>({
     defaultValues: {
-      voiceartistName: "",
-      voiceartistGender: "male",
-      voiceartistLocation: "",
-      voiceartistLevel: 1,
-      voiceartistPhone: "",
-      voiceartistEmail: "",
-      voiceartistMemo: "",
-      expertise: [{ domain: "movie", grade: 5 }]
+      voiceartistName: initialName,
+      voiceartistGender: validGender,
+      voiceartistLocation: initialLocation,
+      voiceartistLevel: initialLevel,
+      voiceartistPhone: initialPhone,
+      voiceartistEmail: initialEmail,
+      voiceartistMemo: initialMemo,
+      expertise: initialExpertise
     }
   });
-
-  // artist 데이터가 로드되면 폼 리셋
-  useEffect(() => {
-    if (artist) {
-      // 디버깅: API 응답 확인
-      console.log("=== Artist data from API ===");
-      console.log("Full artist object:", artist);
-      console.log("Keys:", Object.keys(artist));
-      console.log("voiceartistName:", artist.voiceartistName);
-      console.log("voiceartist_name:", (artist as any).voiceartist_name);
-
-      // API가 snake_case로 반환할 경우 대비
-      const artistData = artist as any;
-      const name = artist.voiceartistName || artistData.voiceartist_name || "";
-      const gender = artist.voiceartistGender || artistData.voiceartist_gender || "male";
-      const location = artist.voiceartistLocation || artistData.voiceartist_location || "";
-      const level = artist.voiceartistLevel || artistData.voiceartist_level || 1;
-      const phone = artist.voiceartistPhone || artistData.voiceartist_phone || "";
-      const email = artist.voiceartistEmail || artistData.voiceartist_email || "";
-      const memo = artist.voiceartistMemo || artistData.voiceartist_memo || "";
-
-      const validGender = (gender === "male" || gender === "female") ? gender : "male";
-
-      // expertise 데이터 변환 (snake_case 대응)
-      const expertiseData = artist.expertise && artist.expertise.length > 0
-        ? artist.expertise.map((exp: any) => ({
-            domain: exp.domain || "movie",
-            domainOther: exp.domainOther || exp.domain_other || "",
-            grade: exp.grade || 5
-          }))
-        : [{ domain: "movie", grade: 5 }];
-
-      const formData = {
-        voiceartistName: name,
-        voiceartistGender: validGender,
-        voiceartistLocation: location,
-        voiceartistLevel: level,
-        voiceartistPhone: phone,
-        voiceartistEmail: email,
-        voiceartistMemo: memo,
-        expertise: expertiseData
-      };
-
-      console.log("=== Form data to reset ===");
-      console.log(formData);
-
-      reset(formData);
-    }
-  }, [artist, reset]);
 
   // 전문 영역 필드 배열
   const { fields, append, remove } = useFieldArray({
@@ -273,8 +253,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       console.log("Invalidating cache...");
       await queryClient.invalidateQueries({ queryKey: ['voiceArtist', artistId] });
       await queryClient.invalidateQueries({ queryKey: ['voiceArtists'] });
-      await refetch();
-      console.log("Cache invalidated and refetched");
 
       toast.success("성우 정보가 성공적으로 업데이트되었습니다.");
       router.push(`/voiceartists/${artistId}`);
@@ -290,33 +268,6 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       setIsSubmitting(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="max-w-[1200px] mx-auto py-10">
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError || !artist) {
-    return (
-      <div className="max-w-[1200px] mx-auto py-10">
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            성우 정보를 불러오는 중 오류가 발생했습니다.
-            {error instanceof Error ? ` (${error.message})` : ''}
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => router.push('/voiceartists')} variant="outline">
-          목록으로 돌아가기
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-[1200px] mx-auto py-10">
@@ -638,6 +589,45 @@ function EditVoiceArtistPage({ params }: { params: { id: string } }) {
       </Card>
     </div>
   );
+}
+
+// 페이지 컴포넌트 - 데이터 로딩 및 에러 처리
+function EditVoiceArtistPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const artistId = parseInt(params.id, 10);
+
+  // 성우 데이터 조회
+  const { data: artist, isLoading, isError, error } = useVoiceArtist(artistId);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-[1200px] mx-auto py-10">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !artist) {
+    return (
+      <div className="max-w-[1200px] mx-auto py-10">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            성우 정보를 불러오는 중 오류가 발생했습니다.
+            {error instanceof Error ? ` (${error.message})` : ''}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => router.push('/voiceartists')} variant="outline">
+          목록으로 돌아가기
+        </Button>
+      </div>
+    );
+  }
+
+  // key를 사용하여 artist가 변경될 때 폼 컴포넌트가 완전히 새로 마운트되도록 함
+  return <VoiceArtistEditForm key={artist.id} artist={artist} artistId={artistId} />;
 }
 
 export default function ProtectedEditVoiceArtistPage({ params }: { params: { id: string } }) {
