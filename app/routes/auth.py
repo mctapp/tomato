@@ -229,6 +229,7 @@ async def login(
     )
 
     return {
+        "access_token": access_token,
         "user": {
             "email": user.email,
             "username": user.username,
@@ -310,6 +311,7 @@ async def verify_mfa(
     )
     
     return {
+        "access_token": access_token,
         "user": {
             "email": user.email,
             "username": user.username,
