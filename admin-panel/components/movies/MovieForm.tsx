@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar as CalendarComponent } from "../ui/calendar";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 interface MovieFormProps {
   initialData?: Movie;
@@ -61,33 +62,23 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
   const handleSubmit = async (data: MovieFormValues) => {
     try {
       setIsSubmitting(true);
-      
-      // API 요청 데이터 준비
+
+      // API 요청 데이터 준비 (api 인스턴스가 camelCase를 snake_case로 자동 변환)
       const movieData = {
         ...data,
         posterFileId: posterId
       };
-      
+
       // 신규 생성 또는 수정 API 호출
-      const url = initialData 
-        ? `/admin/api/movies/${initialData.id}` 
+      const url = initialData
+        ? `/admin/api/movies/${initialData.id}`
         : "/admin/api/movies";
-      
-      const method = initialData ? "PUT" : "POST";
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(movieData),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`영화 ${initialData ? '수정' : '생성'} 중 오류가 발생했습니다.`);
-      }
-      
-      const savedMovie = await response.json();
+
+      const response = initialData
+        ? await api.put(url, movieData)
+        : await api.post(url, movieData);
+
+      const savedMovie = response.data;
       
       toast.success(
         `영화가 성공적으로 ${initialData ? '수정' : '생성'}되었습니다`,
