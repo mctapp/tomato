@@ -40,12 +40,6 @@ export function FileUploadBase({
     setError(null);
 
     try {
-      const token = localStorage.getItem('accessToken'); // ✅ 정확히 수정된 키
-
-      if (!token) {
-        throw new Error("JWT 토큰이 없습니다. 다시 로그인하세요.");
-      }
-
       const formData = new FormData();
       formData.append('file', file);
       formData.append('directory', directory);
@@ -54,11 +48,17 @@ export function FileUploadBase({
       formData.append('entity_id', entityId.toString());
       formData.append('usage_type', usageType);
 
+      // 쿠키 기반 인증 사용 (credentials: 'include')
+      // localStorage 토큰이 있으면 헤더에도 추가
+      const token = localStorage.getItem('accessToken');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch('/admin/api/uploads/direct', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}` // ✅ JWT 정상 전송
-        },
+        headers,
         body: formData,
         credentials: 'include'
       });
