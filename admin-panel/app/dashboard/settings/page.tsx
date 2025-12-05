@@ -15,10 +15,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { 
-  Loader2, Save, RotateCcw, GripVertical, ArrowLeft, Settings, 
-  Code, User, Building, File, BarChart2, Users, Film, Clock, 
-  CheckSquare, Mic, BookOpen, Database, Menu 
+import {
+  Loader2, Save, RotateCcw, GripVertical, ArrowLeft, Settings,
+  Code, User, Building, File, BarChart2, Users, Film, Clock,
+  CheckSquare, Mic, BookOpen, Database, Menu, PenTool, UserCog, Hand,
+  FolderOpen
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CardDefinition, CardType, DashboardPreferences } from "@/lib/dashboard/types";
@@ -73,6 +74,10 @@ function SortableItem({ id, card, isVisible, onToggleVisibility }: SortableItemP
       case 'voice-artist': return Mic;
       case 'recent-backups': return Save;
       case 'guideline': return BookOpen;
+      case 'file-type': return FolderOpen;
+      case 'scriptwriter': return PenTool;
+      case 'staff': return UserCog;
+      case 'sl-interpreter': return Hand;
       default: return Settings;
     }
   };

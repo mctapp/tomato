@@ -5,6 +5,9 @@ from app.db import get_session
 from app.models.movies import Movie
 from app.models.users import User
 from app.models.voice_artist import VoiceArtist, VoiceArtistSample
+from app.models.scriptwriter import Scriptwriter, ScriptwriterSpecialty, ScriptwriterSample
+from app.models.staff import Staff, StaffRole, StaffPortfolio
+from app.models.sl_interpreter import SLInterpreter, SLInterpreterSample
 from app.models.user_preference import UserPreference
 from app.schemas.movie import MovieSummaryResponse, MovieStats, RecentMovieResponse, VisibilityTypeCounts, PublishingStatusCounts
 from app.schemas.voice_artist import VoiceArtistStats
@@ -116,6 +119,84 @@ async def get_voice_artist_stats(
    except Exception as e:
        logger.error(f"성우 통계 조회 오류: {str(e)}")
        raise HTTPException(status_code=500, detail=f"성우 통계 조회 중 오류 발생: {str(e)}")
+
+@router.get("/scriptwriter-stats")
+async def get_scriptwriter_stats(
+   db: Session = Depends(get_session),
+   current_user: User = Depends(get_current_active_user)
+):
+   """해설작가 통계 정보 조회 (음성해설/자막해설 분류)"""
+   try:
+       # 음성해설(AD) 작가 수 - specialty_type이 'AD'인 작가
+       ad_count_result = db.exec(
+           select(func.count(func.distinct(ScriptwriterSpecialty.scriptwriter_id)))
+           .where(ScriptwriterSpecialty.specialty_type == "AD")
+       ).one_or_none()
+       ad_count = ad_count_result[0] if ad_count_result and isinstance(ad_count_result, tuple) else (ad_count_result if ad_count_result else 0)
+
+       # 자막해설(CC) 작가 수 - specialty_type이 'CC'인 작가
+       cc_count_result = db.exec(
+           select(func.count(func.distinct(ScriptwriterSpecialty.scriptwriter_id)))
+           .where(ScriptwriterSpecialty.specialty_type == "CC")
+       ).one_or_none()
+       cc_count = cc_count_result[0] if cc_count_result and isinstance(cc_count_result, tuple) else (cc_count_result if cc_count_result else 0)
+
+       return {
+           "totalADWriters": ad_count,
+           "totalCCWriters": cc_count
+       }
+   except Exception as e:
+       logger.error(f"해설작가 통계 조회 오류: {str(e)}")
+       raise HTTPException(status_code=500, detail=f"해설작가 통계 조회 중 오류 발생: {str(e)}")
+
+@router.get("/staff-stats")
+async def get_staff_stats(
+   db: Session = Depends(get_session),
+   current_user: User = Depends(get_current_active_user)
+):
+   """스태프 통계 정보 조회 (전체 스태프/프로듀서)"""
+   try:
+       # 전체 스태프 수
+       staff_count_result = db.exec(select(func.count()).select_from(Staff)).one_or_none()
+       staff_count = staff_count_result[0] if staff_count_result and isinstance(staff_count_result, tuple) else (staff_count_result if staff_count_result else 0)
+
+       # 프로듀서 역할인 스태프 수
+       producer_count_result = db.exec(
+           select(func.count(func.distinct(StaffRole.staff_id)))
+           .where(StaffRole.role_type == "producer")
+       ).one_or_none()
+       producer_count = producer_count_result[0] if producer_count_result and isinstance(producer_count_result, tuple) else (producer_count_result if producer_count_result else 0)
+
+       return {
+           "totalStaffs": staff_count,
+           "totalProducers": producer_count
+       }
+   except Exception as e:
+       logger.error(f"스태프 통계 조회 오류: {str(e)}")
+       raise HTTPException(status_code=500, detail=f"스태프 통계 조회 중 오류 발생: {str(e)}")
+
+@router.get("/sl-interpreter-stats")
+async def get_sl_interpreter_stats(
+   db: Session = Depends(get_session),
+   current_user: User = Depends(get_current_active_user)
+):
+   """수어통역사 통계 정보 조회"""
+   try:
+       # 전체 수어통역사 수
+       interpreter_count_result = db.exec(select(func.count()).select_from(SLInterpreter)).one_or_none()
+       interpreter_count = interpreter_count_result[0] if interpreter_count_result and isinstance(interpreter_count_result, tuple) else (interpreter_count_result if interpreter_count_result else 0)
+
+       # 전체 샘플 수
+       samples_count_result = db.exec(select(func.count()).select_from(SLInterpreterSample)).one_or_none()
+       samples_count = samples_count_result[0] if samples_count_result and isinstance(samples_count_result, tuple) else (samples_count_result if samples_count_result else 0)
+
+       return {
+           "totalInterpreters": interpreter_count,
+           "totalSamples": samples_count
+       }
+   except Exception as e:
+       logger.error(f"수어통역사 통계 조회 오류: {str(e)}")
+       raise HTTPException(status_code=500, detail=f"수어통역사 통계 조회 중 오류 발생: {str(e)}")
 
 @router.get("/preferences", response_model=DashboardPreferences)
 async def get_dashboard_preferences(

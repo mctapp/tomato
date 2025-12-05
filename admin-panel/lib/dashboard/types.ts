@@ -15,7 +15,10 @@ export type CardType =
   | 'voice-artist'
   | 'recent-backups'
   | 'guideline'
-  | 'file-type';
+  | 'file-type'
+  | 'scriptwriter'
+  | 'staff'
+  | 'sl-interpreter';
 
 export interface CardDefinition {
   id: string;

@@ -15,6 +15,9 @@ import VoiceArtistCard from '@/components/dashboard/cards/VoiceArtistCard';
 import GuidelineCard from '@/components/dashboard/cards/GuidelineCard';
 import DatabaseBackupCard from '@/components/dashboard/cards/DatabaseBackupCard';
 import FileTypeCard from '@/components/dashboard/cards/FileTypeCard';
+import ScriptwriterCard from '@/components/dashboard/cards/ScriptwriterCard';
+import StaffCard from '@/components/dashboard/cards/StaffCard';
+import SLInterpreterCard from '@/components/dashboard/cards/SLInterpreterCard';
 
 // Card definitions
 const cardDefinitions: CardDefinition[] = [
@@ -130,6 +133,33 @@ const cardDefinitions: CardDefinition[] = [
     defaultVisible: false,
     allowedRoles: [Role.SUPER_ADMIN, Role.ADMIN],
     order: 12,
+  },
+  {
+    id: 'scriptwriter',
+    title: '해설작가 관리',
+    type: 'scriptwriter',
+    description: '해설작가 정보를 관리하세요',
+    component: ScriptwriterCard,
+    defaultVisible: true,
+    order: 13,
+  },
+  {
+    id: 'staff',
+    title: '스태프 관리',
+    type: 'staff',
+    description: '스태프 정보를 관리하세요',
+    component: StaffCard,
+    defaultVisible: true,
+    order: 14,
+  },
+  {
+    id: 'sl-interpreter',
+    title: '수어통역사 관리',
+    type: 'sl-interpreter',
+    description: '수어통역사 정보를 관리하세요',
+    component: SLInterpreterCard,
+    defaultVisible: true,
+    order: 15,
   },
 ];
 
