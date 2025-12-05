@@ -20,6 +20,7 @@ export interface FileInfo {
 export interface MovieBase {
   title: string;
   director?: string | null;
+  productionYear?: number | null;
   releaseDate?: string | null;
   filmGenre?: string | null;
   filmRating?: string | null;
@@ -50,6 +51,7 @@ export interface MovieCreate extends MovieBase {}
 export interface MovieUpdate {
   title?: string;
   director?: string | null;
+  productionYear?: number | null;
   releaseDate?: string | null;
   filmGenre?: string | null;
   filmRating?: string | null;

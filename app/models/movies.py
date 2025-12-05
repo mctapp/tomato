@@ -18,6 +18,7 @@ class Movie(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
     director: Optional[str] = None
+    production_year: Optional[int] = None
     release_date: Optional[date] = None
     film_genre: Optional[str] = None
     film_rating: Optional[str] = None

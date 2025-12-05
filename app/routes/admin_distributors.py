@@ -27,6 +27,39 @@ router = APIRouter(
     tags=["Admin - Distributors"]
 )
 
+@router.get("/top-by-movies", response_model=List[DistributorListItemResponse])
+def get_top_distributors_by_movies(
+    limit: int = 10,
+    db: Session = Depends(get_session)
+):
+    """
+    등록된 영화 수가 많은 순서대로 배급사 목록을 반환합니다.
+    기본값: 상위 10개
+    """
+    try:
+        from sqlalchemy import func
+
+        # 영화 수 기준으로 배급사 정렬
+        subquery = db.query(
+            Movie.distributor_id,
+            func.count(Movie.id).label('movie_count')
+        ).filter(Movie.distributor_id.isnot(None)).group_by(Movie.distributor_id).subquery()
+
+        distributors = db.query(Distributor)\
+            .outerjoin(subquery, Distributor.id == subquery.c.distributor_id)\
+            .filter(Distributor.is_active == True)\
+            .order_by(func.coalesce(subquery.c.movie_count, 0).desc())\
+            .limit(limit)\
+            .all()
+
+        return distributors
+    except SQLAlchemyError as e:
+        logger.error(f"Database error getting top distributors: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="배급사 목록을 가져오는 중 오류가 발생했습니다."
+        )
+
 @router.get("/stats", response_model=Dict[str, int])
 def get_distributor_stats(db: Session = Depends(get_session)):  # get_db → get_session
     """

@@ -11,6 +11,7 @@ export const movieFormSchema = z.object({
   director: z.string().nullable().optional(),
   logline: z.string().nullable().optional(),
   supportedOsType: z.enum(["ios", "android"]).nullable().optional(),
+  productionYear: z.number().nullable().optional(),
   releaseDate: z.string().nullable().optional(),
   startAt: z.string().nullable().optional(),
   endAt: z.string().nullable().optional(),

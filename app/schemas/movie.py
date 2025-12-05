@@ -38,6 +38,7 @@ class FileInfo(BaseSchema):
 class MovieBase(BaseSchema):
     title: str
     director: Optional[str] = None
+    production_year: Optional[int] = None
     release_date: Optional[date] = None
     film_genre: Optional[str] = None
     film_rating: Optional[str] = None
@@ -66,6 +67,7 @@ class MovieCreate(MovieBase):
 class MovieUpdate(BaseSchema):
     title: Optional[str] = None
     director: Optional[str] = None
+    production_year: Optional[int] = None
     cast: Optional[str] = None
     release_date: Optional[date] = None
     film_genre: Optional[str] = None

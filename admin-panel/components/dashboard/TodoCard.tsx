@@ -1,14 +1,16 @@
 // components/dashboard/TodoCard.tsx
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Plus, Trash2, Edit, X, Loader2, EyeOff, Eye } from "lucide-react";
+import { Check, Plus, Trash2, Edit, X, Loader2, EyeOff, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTodos, useCreateTodo, useUpdateTodo, useDeleteTodo } from "@/hooks/data/useTodos";
 import { Todo, TodoCreate, TodoUpdate } from "@/types/todo";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+
+const ITEMS_PER_PAGE = 5;
 
 export function TodoCard() {
   const [newTodo, setNewTodo] = useState('');
@@ -18,6 +20,8 @@ export function TodoCard() {
   const [selectedPriority, setSelectedPriority] = useState<'low' | 'medium' | 'high'>('medium');
   // 완료된 할 일 표시 여부를 위한 상태
   const [showCompleted, setShowCompleted] = useState(false);
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
 
   // React Query 훅 사용
   const { 
@@ -33,6 +37,20 @@ export function TodoCard() {
 
   // 필터링된 할 일 목록 계산
   const filteredTodos = todos ? todos.filter(todo => showCompleted ? true : !todo.is_completed) : [];
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(filteredTodos.length / ITEMS_PER_PAGE);
+  const paginatedTodos = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredTodos.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredTodos, currentPage]);
+
+  // 페이지 변경 시 범위 체크
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   // 에러 처리를 위한 useEffect
   useEffect(() => {
@@ -310,12 +328,12 @@ export function TodoCard() {
       <div className="space-y-2">
         {filteredTodos.length === 0 ? (
           <p className="text-center text-gray-500 text-sm py-4">
-            {todos && todos.length > 0 
-              ? '모든 할 일이완료되었습니다.' 
+            {todos && todos.length > 0
+              ? '모든 할 일이 완료되었습니다.'
               : '할 일이 없습니다.'}
           </p>
         ) : (
-          filteredTodos.map((todo) => (
+          paginatedTodos.map((todo) => (
             <div 
               key={todo.id} 
               className={`flex items-center justify-between p-2 rounded-md border ${
@@ -453,6 +471,33 @@ export function TodoCard() {
           ))
         )}
       </div>
+
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center space-x-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm text-gray-500">
+            {currentPage} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
