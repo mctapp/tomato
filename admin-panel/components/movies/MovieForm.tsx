@@ -121,6 +121,7 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
         filmGenre: emptyToNull(data.filmGenre),
         filmRating: emptyToNull(data.filmRating),
         runningTime: data.runningTime,
+        runningTimeSeconds: data.runningTimeSeconds,
         country: emptyToNull(data.country),
         logline: emptyToNull(data.logline),
         visibilityType: data.visibilityType,
@@ -326,36 +327,19 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
                     control={form.control}
                     name="releaseDate"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem>
                         <FormLabel className="text-sm font-medium flex items-center">
                           <Calendar className="h-4 w-4 mr-1 text-[#4da34c]" />
                           개봉일
                         </FormLabel>
-                        <Popover modal={true}>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className={`w-full pl-3 text-left font-normal border-gray-300 ${!field.value ? "text-muted-foreground" : ""}`}
-                              >
-                                {field.value ? (
-                                  format(new Date(field.value), "yyyy-MM-dd")
-                                ) : (
-                                  <span>날짜 선택</span>
-                                )}
-                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 z-[100]" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                            />
-                          </PopoverContent>
-                        </Popover>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                            value={field.value || ""}
+                            className="border-gray-300 focus:ring-[#4da34c] focus:border-[#4da34c]"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -410,30 +394,62 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
 
                   {/* 기타 정보 */}
                   <div className="space-y-4">
-                    {/* 상영 시간 */}
-                    <FormField
-                      control={form.control}
-                      name="runningTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-medium flex items-center">
-                            <Clock className="h-4 w-4 mr-1 text-[#4da34c]" />
-                            상영 시간 (분)
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="상영 시간"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
-                              className="border-gray-300 focus:ring-[#4da34c] focus:border-[#4da34c]"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* 상영 시간 (분/초) */}
+                    <div>
+                      <FormLabel className="text-sm font-medium flex items-center mb-2">
+                        <Clock className="h-4 w-4 mr-1 text-[#4da34c]" />
+                        상영 시간
+                      </FormLabel>
+                      <div className="grid grid-cols-2 gap-2">
+                        <FormField
+                          control={form.control}
+                          name="runningTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    placeholder="분"
+                                    min={0}
+                                    {...field}
+                                    value={field.value || ""}
+                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+                                    className="border-gray-300 focus:ring-[#4da34c] focus:border-[#4da34c] pr-8"
+                                  />
+                                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">분</span>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="runningTimeSeconds"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    placeholder="초"
+                                    min={0}
+                                    max={59}
+                                    {...field}
+                                    value={field.value || ""}
+                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+                                    className="border-gray-300 focus:ring-[#4da34c] focus:border-[#4da34c] pr-8"
+                                  />
+                                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">초</span>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
 
                     {/* 국가 */}
                     <FormField

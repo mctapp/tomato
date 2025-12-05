@@ -34,7 +34,7 @@ export default function CreateMoviePage() {
   }, []);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="max-w-[1200px] mx-auto py-6 space-y-6">
       <PageHeader 
         heading="영화 등록"
         text="새로운 영화 정보를 등록합니다"
