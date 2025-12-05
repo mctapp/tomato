@@ -39,16 +39,18 @@ export function ImageUpload({
     if (initialImageUrl) {
       const fileId = initialImageUrl.split('/').pop();
       if (fileId && !isNaN(Number(fileId))) {
-        fetch(`/admin/api/uploads/files/${fileId}`)
+        fetch(`/admin/api/uploads/files/${fileId}`, {
+          credentials: 'include'
+        })
           .then(res => {
             if (res.ok) return res.json();
             throw new Error('Failed to fetch file info');
           })
           .then(data => {
             setFileInfo({
-              name: data.original_filename,
-              type: data.content_type,
-              size: data.file_size
+              name: data.original_filename || data.originalFilename || 'Unknown',
+              type: data.content_type || data.contentType || '',
+              size: data.file_size || data.fileSize || 0
             });
           })
           .catch(err => console.error('Error fetching file info:', err));
@@ -108,7 +110,7 @@ export function ImageUpload({
                 <p className="text-sm font-medium truncate">{fileInfo.name}</p>
                 <div className="flex gap-2 mt-1">
                   <Badge variant="outline">
-                    {fileInfo.type.split('/')[1]?.toUpperCase() || fileInfo.type}
+                    {fileInfo.type ? (fileInfo.type.split('/')[1]?.toUpperCase() || fileInfo.type) : 'FILE'}
                   </Badge>
                   <Badge variant="outline">{formatFileSize(fileInfo.size)}</Badge>
                 </div>

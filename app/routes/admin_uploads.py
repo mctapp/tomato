@@ -159,6 +159,32 @@ async def direct_upload(
         logger.error(f"Error in direct upload: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+@router.get("/files/{file_id}", response_model=FileAssetResponse)
+async def get_file_by_id(
+    file_id: int = Path(...),
+    with_url: bool = Query(False),
+    url_expiry: int = Query(3600, ge=60, le=86400),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """단일 파일 정보 조회"""
+    try:
+        file_service = get_file_asset_service(db)
+        file_asset = file_service.get_by_id(file_id)
+
+        if not file_asset:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+
+        logger.info(f"User {current_user.id} retrieved file {file_id}")
+
+        return file_service.format_response(file_asset, with_url=with_url, url_expiry=url_expiry)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving file: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 @router.get("/files", response_model=List[FileAssetResponse])
 async def get_entity_files(
     entity_type: str = Query(...),
