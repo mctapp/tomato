@@ -13,6 +13,9 @@ import {
   BookOpen,
   Save,
   FolderOpen,
+  PenTool,
+  UserCog,
+  Hand,
   LucideIcon
 } from 'lucide-react';
 import { CardType } from './types';
@@ -38,6 +41,9 @@ export const CARD_ICONS: Record<CardType, LucideIcon> = {
   'guideline': BookOpen,
   'recent-backups': Save,
   'file-type': FolderOpen,
+  'scriptwriter': PenTool,
+  'staff': UserCog,
+  'sl-interpreter': Hand,
 };
 
 export const BUTTON_STYLES = {

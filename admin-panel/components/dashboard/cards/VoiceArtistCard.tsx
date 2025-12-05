@@ -37,10 +37,10 @@ const VoiceArtistCard = () => {
  };
  
  const renderFooter = () => (
-   <div className="w-full grid grid-cols-2 gap-2">
+   <div className="w-full flex justify-between">
      <Link href="/voiceartists" target="_blank" rel="noopener noreferrer">
-       <Button 
-         variant="outline" 
+       <Button
+         variant="outline"
          className={BUTTON_STYLES.leftButton}
        >
          <ListFilter className="h-4 w-4 mr-2" />
@@ -48,7 +48,7 @@ const VoiceArtistCard = () => {
        </Button>
      </Link>
      <Link href="/voiceartists/create" target="_blank" rel="noopener noreferrer">
-       <Button 
+       <Button
          variant="outline"
          className={BUTTON_STYLES.rightButton}
        >
