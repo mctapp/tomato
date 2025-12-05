@@ -104,21 +104,27 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
     try {
       setIsSubmitting(true);
 
+      // 빈 문자열을 null로 변환하는 헬퍼 함수
+      const emptyToNull = (value: string | null | undefined): string | null => {
+        return value === "" || value === undefined ? null : value;
+      };
+
       // 백엔드 MovieUpdate 스키마에서 허용하는 필드만 추출
+      // 빈 문자열을 null로 변환하여 Pydantic 검증 오류 방지
       const movieData = {
         title: data.title,
-        director: data.director,
-        releaseDate: data.releaseDate,
-        filmGenre: data.filmGenre,
-        filmRating: data.filmRating,
+        director: emptyToNull(data.director),
+        releaseDate: emptyToNull(data.releaseDate),
+        filmGenre: emptyToNull(data.filmGenre),
+        filmRating: emptyToNull(data.filmRating),
         runningTime: data.runningTime,
-        country: data.country,
-        logline: data.logline,
+        country: emptyToNull(data.country),
+        logline: emptyToNull(data.logline),
         visibilityType: data.visibilityType,
-        startAt: data.startAt,
-        endAt: data.endAt,
-        featureCode: data.featureCode,
-        adminMemo: data.adminMemo,
+        startAt: emptyToNull(data.startAt),
+        endAt: emptyToNull(data.endAt),
+        featureCode: emptyToNull(data.featureCode),
+        adminMemo: emptyToNull(data.adminMemo),
         distributorId: data.distributorId,
         isPublic: data.isPublic,
         publishingStatus: data.publishingStatus,
