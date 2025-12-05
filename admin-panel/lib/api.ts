@@ -54,6 +54,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,  // 쿠키 기반 인증을 위해 필수
 });
 
 // 요청 인터셉터: camelCase를 snake_case로 변환
