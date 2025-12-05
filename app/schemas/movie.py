@@ -43,6 +43,7 @@ class MovieBase(BaseSchema):
     film_genre: Optional[str] = None
     film_rating: Optional[str] = None
     running_time: Optional[int] = None
+    running_time_seconds: Optional[int] = None
     country: Optional[str] = None
     logline: Optional[str] = None
     visibility_type: str = "always"
@@ -73,6 +74,7 @@ class MovieUpdate(BaseSchema):
     film_genre: Optional[str] = None
     film_rating: Optional[str] = None
     running_time: Optional[int] = None
+    running_time_seconds: Optional[int] = None
     country: Optional[str] = None
     logline: Optional[str] = None
     visibility_type: Optional[str] = None

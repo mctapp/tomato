@@ -25,6 +25,7 @@ export interface MovieBase {
   filmGenre?: string | null;
   filmRating?: string | null;
   runningTime?: number | null;
+  runningTimeSeconds?: number | null;
   country?: string | null;
   logline?: string | null;
   visibilityType: 'hidden' | 'period' | 'always';
@@ -56,6 +57,7 @@ export interface MovieUpdate {
   filmGenre?: string | null;
   filmRating?: string | null;
   runningTime?: number | null;
+  runningTimeSeconds?: number | null;
   country?: string | null;
   logline?: string | null;
   visibilityType?: 'hidden' | 'period' | 'always';

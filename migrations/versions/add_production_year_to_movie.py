@@ -1,4 +1,4 @@
-"""Add production_year to movie table
+"""Add production_year and running_time_seconds to movie table
 
 Revision ID: add_production_year
 Revises: f90801b534dd
@@ -19,8 +19,11 @@ depends_on = None
 def upgrade():
     # Add production_year column to movie table
     op.add_column('movie', sa.Column('production_year', sa.Integer(), nullable=True))
+    # Add running_time_seconds column to movie table
+    op.add_column('movie', sa.Column('running_time_seconds', sa.Integer(), nullable=True))
 
 
 def downgrade():
-    # Remove production_year column from movie table
+    # Remove columns from movie table
+    op.drop_column('movie', 'running_time_seconds')
     op.drop_column('movie', 'production_year')

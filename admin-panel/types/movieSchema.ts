@@ -16,6 +16,7 @@ export const movieFormSchema = z.object({
   startAt: z.string().nullable().optional(),
   endAt: z.string().nullable().optional(),
   runningTime: z.number().nullable().optional(),
+  runningTimeSeconds: z.number().nullable().optional(),
   filmGenre: z.string().nullable().optional(),
   filmRating: z.string().nullable().optional(),
   distributorId: z.number().nullable().optional(),

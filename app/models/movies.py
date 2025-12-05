@@ -22,7 +22,8 @@ class Movie(SQLModel, table=True):
     release_date: Optional[date] = None
     film_genre: Optional[str] = None
     film_rating: Optional[str] = None
-    running_time: Optional[str] = None
+    running_time: Optional[int] = None
+    running_time_seconds: Optional[int] = None
     country: Optional[str] = None
     logline: Optional[str] = None
     poster_original_rendition_id: Optional[int] = Field(default=None, foreign_key="image_renditions.id")
