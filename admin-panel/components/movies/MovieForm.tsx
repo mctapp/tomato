@@ -10,6 +10,7 @@ import { movieFormSchema, MovieFormValues } from "../../types/movieSchema";
 import { ImageUpload } from "../../app/components/common/uploads/ImageUpload";
 import { PrivateFileUpload } from "../../app/components/common/uploads/PrivateFileUpload";
 import { GenreSelector } from "../../app/components/common/selectors/GenreSelector";
+import { DistributorSelector } from "./DistributorSelector";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
@@ -91,7 +92,8 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
       title: "",
       visibilityType: "always",
       isPublic: false,
-      publishingStatus: "draft"
+      publishingStatus: "draft",
+      filmRating: "전체관람가"
     },
   });
 
@@ -114,6 +116,7 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
       const movieData = {
         title: data.title,
         director: emptyToNull(data.director),
+        productionYear: data.productionYear,
         releaseDate: emptyToNull(data.releaseDate),
         filmGenre: emptyToNull(data.filmGenre),
         filmRating: emptyToNull(data.filmRating),
@@ -291,6 +294,33 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
+                  {/* 제작연도 필드 */}
+                  <FormField
+                    control={form.control}
+                    name="productionYear"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium flex items-center">
+                          <Calendar className="h-4 w-4 mr-1 text-[#4da34c]" />
+                          제작연도
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="예: 2024"
+                            min={1900}
+                            max={2100}
+                            {...field}
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+                            className="border-gray-300 focus:ring-[#4da34c] focus:border-[#4da34c]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   {/* 개봉일 필드 */}
                   <FormField
                     control={form.control}
@@ -301,10 +331,11 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
                           <Calendar className="h-4 w-4 mr-1 text-[#4da34c]" />
                           개봉일
                         </FormLabel>
-                        <Popover>
+                        <Popover modal={true}>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
+                                type="button"
                                 variant="outline"
                                 className={`w-full pl-3 text-left font-normal border-gray-300 ${!field.value ? "text-muted-foreground" : ""}`}
                               >
@@ -317,12 +348,11 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-0 z-[100]" align="start">
                             <CalendarComponent
                               mode="single"
                               selected={field.value ? new Date(field.value) : undefined}
                               onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
@@ -330,7 +360,9 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
                       </FormItem>
                     )}
                   />
+                </div>
 
+                <div className="grid gap-6 md:grid-cols-2">
                   {/* 장르 필드 */}
                   <GenreSelector
                     control={form.control}
@@ -432,32 +464,11 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
                       name="distributorId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-medium flex items-center">
-                            <Building2 className="h-4 w-4 mr-1 text-[#4da34c]" />
-                            배급사
-                          </FormLabel>
-                          <Select
-                            onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))}
-                            defaultValue={field.value?.toString() || "none"}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="border-gray-300 focus:ring-[#4da34c] focus:border-[#4da34c]">
-                                <SelectValue placeholder="배급사 선택" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">선택 안함</SelectItem>
-                              {distributors.map((distributor) => (
-                                <SelectItem
-                                  key={distributor.id}
-                                  value={distributor.id.toString()}
-                                  disabled={!distributor.isActive}
-                                >
-                                  {distributor.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <DistributorSelector
+                            distributors={distributors}
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
