@@ -63,9 +63,24 @@ export function MovieForm({ initialData, distributors = [], onSubmit }: MovieFor
     try {
       setIsSubmitting(true);
 
-      // API 요청 데이터 준비 (api 인스턴스가 camelCase를 snake_case로 자동 변환)
+      // 백엔드 MovieUpdate 스키마에서 허용하는 필드만 추출
       const movieData = {
-        ...data,
+        title: data.title,
+        director: data.director,
+        releaseDate: data.releaseDate,
+        filmGenre: data.filmGenre,
+        filmRating: data.filmRating,
+        runningTime: data.runningTime,
+        country: data.country,
+        logline: data.logline,
+        visibilityType: data.visibilityType,
+        startAt: data.startAt,
+        endAt: data.endAt,
+        featureCode: data.featureCode,
+        adminMemo: data.adminMemo,
+        distributorId: data.distributorId,
+        isPublic: data.isPublic,
+        publishingStatus: data.publishingStatus,
         posterFileId: posterId
       };
 
