@@ -40,45 +40,33 @@ class APIGatewayMiddleware(BaseHTTPMiddleware):
                 )
         
         # 1. Rate Limiting 제거됨
-
-        # Redis 연결 상태 확인
-        redis_connected = getattr(request.app.state, 'redis_connected', False)
-
-        # 2. Throttling (Redis 필요)
-        if redis_connected:
-            try:
-                identifier = f"api_key:{api_key.id}" if api_key else f"user:{user.id}" if user else f"ip:{request.client.host}"
-                token_acquired, wait_time = await throttler.acquire_token(identifier, request.url.path)
-
-                if not token_acquired:
-                    return JSONResponse(
-                        status_code=503,
-                        content={"detail": "Service temporarily unavailable"},
-                        headers={"Retry-After": str(int(wait_time))}
-                    )
-            except Exception as e:
-                print(f"⚠️ Throttling check failed: {e}")
-                # Redis 오류 시 통과
-
-        # 3. Quota 확인 (Redis 필요)
-        if redis_connected and (api_key or user):
-            try:
-                quota_allowed, quota_info = await quota_manager.check_quota(
-                    user, api_key, "request"
+        
+        # 2. Throttling
+        identifier = f"api_key:{api_key.id}" if api_key else f"user:{user.id}" if user else f"ip:{request.client.host}"
+        token_acquired, wait_time = await throttler.acquire_token(identifier, request.url.path)
+        
+        if not token_acquired:
+            return JSONResponse(
+                status_code=503,
+                content={"detail": "Service temporarily unavailable"},
+                headers={"Retry-After": str(int(wait_time))}
+            )
+        
+        # 3. Quota 확인
+        if api_key or user:
+            quota_allowed, quota_info = await quota_manager.check_quota(
+                user, api_key, "request"
+            )
+            if not quota_allowed:
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": f"Quota exceeded: {quota_info['period']} limit reached"},
+                    headers={
+                        "X-Quota-Limit": str(quota_info["limit"]),
+                        "X-Quota-Current": str(quota_info["current"]),
+                        "X-Quota-Reset": quota_info["reset_at"].isoformat()
+                    }
                 )
-                if not quota_allowed:
-                    return JSONResponse(
-                        status_code=403,
-                        content={"detail": f"Quota exceeded: {quota_info['period']} limit reached"},
-                        headers={
-                            "X-Quota-Limit": str(quota_info["limit"]),
-                            "X-Quota-Current": str(quota_info["current"]),
-                            "X-Quota-Reset": quota_info["reset_at"].isoformat()
-                        }
-                    )
-            except Exception as e:
-                print(f"⚠️ Quota check failed: {e}")
-                # Redis 오류 시 통과
         
         # 4. 입력 검증 - GET, HEAD, OPTIONS, DELETE 요청은 body 검증 스킵
         if request.method in ["GET", "HEAD", "OPTIONS", "DELETE"]:

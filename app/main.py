@@ -30,21 +30,17 @@ async def lifespan(app: FastAPI):
     print("🚀 Starting Tomato Security System...")
     
     # Redis 연결
-    redis_connected = False
     try:
         await redis_client.connect()
-        redis_connected = True
         print("✅ Redis connected successfully!")
     except Exception as e:
-        print(f"⚠️  Redis connection failed: {e}")
+        print(f"❌ Redis connection failed: {e}")
         print("Please check:")
         print("1. Redis is running: sudo systemctl status redis")
         print("2. Redis password in .env file")
         print("3. Redis host/port settings")
-        print("⚠️  Server will start without Redis - rate limiting and some security features disabled")
-
-    # Redis 연결 상태를 앱 상태에 저장
-    app.state.redis_connected = redis_connected
+        # Redis는 보안의 핵심이므로 연결 실패 시 종료
+        raise RuntimeError("Cannot start without Redis connection")
     
     # 모니터링 시스템 초기화
     try:
