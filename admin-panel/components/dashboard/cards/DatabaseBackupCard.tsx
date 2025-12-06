@@ -1,6 +1,6 @@
 // /components/dashboard/cards/DatabaseBackupCard.tsx
 import { useEffect, useState } from 'react';
-import { Loader2, Save, Database, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, Database, AlertTriangle, Calendar } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { BaseCard } from './BaseCard';
 import { format } from 'date-fns';
@@ -64,6 +64,11 @@ const DatabaseBackupCard = () => {
    router.push('/database?tab=overview');
  };
 
+ // 예약 백업 페이지로 이동
+ const goToScheduledBackup = () => {
+   router.push('/database?tab=backups&schedule=schedule');
+ };
+
  const renderContent = () => {
    if (isLoading) {
      return (
@@ -115,22 +120,30 @@ const DatabaseBackupCard = () => {
  };
  
  const renderFooter = () => (
-   <div className="w-full grid grid-cols-2 gap-2">
-     <Button 
-       variant="outline" 
+   <div className="w-full grid grid-cols-3 gap-2">
+     <Button
+       variant="outline"
        className={BUTTON_STYLES.leftButton}
        onClick={goToBackupOverview}
      >
-       <Database className="h-4 w-4 mr-2" />
+       <Database className="h-4 w-4 mr-1" />
        백업 개요
      </Button>
-     <Button 
+     <Button
        variant="outline"
-       className={BUTTON_STYLES.rightButton}
+       className="text-xs h-8"
        onClick={goToBackupCreation}
      >
-       <Save className="h-4 w-4 mr-2" />
+       <Save className="h-4 w-4 mr-1" />
        백업 생성
+     </Button>
+     <Button
+       variant="outline"
+       className={BUTTON_STYLES.rightButton}
+       onClick={goToScheduledBackup}
+     >
+       <Calendar className="h-4 w-4 mr-1" />
+       예약 백업
      </Button>
    </div>
  );

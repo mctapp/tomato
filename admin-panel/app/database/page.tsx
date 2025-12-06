@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -210,6 +211,20 @@ function DatabaseManagementContent() {
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+
+  // URL 쿼리 파라미터에서 탭 값 읽기
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['overview', 'backups', 'tables'].includes(tabParam)) {
+      setSelectedTab(tabParam);
+    }
+
+    const scheduleParam = searchParams.get('schedule');
+    if (scheduleParam && ['backup-list', 'schedule'].includes(scheduleParam)) {
+      setScheduleTabValue(scheduleParam);
+    }
+  }, [searchParams]);
 
   // 요일 이름 배열
   const weekdays = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
