@@ -130,7 +130,10 @@ class APIGatewayMiddleware(BaseHTTPMiddleware):
         # 8. API 키 사용 기록
         if api_key:
             try:
-                async with get_session() as db:
+                # get_session()은 제너레이터이므로 next()로 세션 획득
+                db_gen = get_session()
+                db = next(db_gen)
+                try:
                     await api_key_analytics.record_usage(
                         db=db,
                         api_key=api_key,
@@ -144,6 +147,11 @@ class APIGatewayMiddleware(BaseHTTPMiddleware):
                         request_id=getattr(request.state, 'request_id', ''),
                         error_message=None if response.status_code < 400 else "Error"
                     )
+                finally:
+                    try:
+                        next(db_gen)
+                    except StopIteration:
+                        pass
             except Exception as e:
                 # 로깅 실패는 무시
                 print(f"Failed to record API usage: {e}")
@@ -166,28 +174,36 @@ class APIGatewayMiddleware(BaseHTTPMiddleware):
         if api_key_header:
             # 키 검증
             key_prefix = api_key_header[:8]
-            
-            async with get_session() as db:
+
+            # get_session()은 제너레이터이므로 next()로 세션 획득
+            db_gen = get_session()
+            db = next(db_gen)
+            try:
                 api_key = await api_key_generator.get_key_by_prefix(db, key_prefix)
-                
+
                 if api_key:
                     # 전체 키 검증
                     if not api_key_generator.verify_key(api_key_header, api_key.key_hash):
                         raise ValueError("Invalid API key")
-                    
+
                     # 권한 검증
                     from app.api.keys.permissions import api_key_permission_manager
                     allowed, reason = api_key_permission_manager.check_endpoint_permission(
                         api_key, request.method, request.url.path
                     )
-                    
+
                     if not allowed:
                         raise ValueError(reason)
-                    
+
                     # API 키 컨텍스트 설정
                     request.state.api_key = api_key
                     if api_key.user_id:
                         user = db.get(User, api_key.user_id)
+            finally:
+                try:
+                    next(db_gen)
+                except StopIteration:
+                    pass
         
         # Bearer 토큰 확인 (API 키가 없는 경우)
         if not api_key:

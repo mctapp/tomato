@@ -31,7 +31,7 @@ router = APIRouter(
    tags=["Dashboard"]
 )
 
-@router.get("/expiring-movies", response_model=List[MovieSummaryResponse])
+@router.get("/expiring-movies")
 async def get_expiring_movies(
    limit: int = Query(5, ge=1, le=20),
    db: Session = Depends(get_session),
@@ -39,6 +39,7 @@ async def get_expiring_movies(
 ):
    """만료 임박한 영화 목록 조회"""
    try:
+       logger.info(f"[expiring-movies] 요청 시작 - user: {current_user.id}")
        now = dt.now()
        query = (select(Movie)
               .where(Movie.visibility_type == "period",
@@ -46,9 +47,20 @@ async def get_expiring_movies(
               .order_by(Movie.end_at)
               .limit(limit))
        movies = db.exec(query).all()
-       return movies
+       logger.info(f"[expiring-movies] 조회 완료 - {len(movies)}개 영화")
+
+       # 수동으로 응답 데이터 변환 (response_model 검증 우회)
+       result = []
+       for movie in movies:
+           result.append({
+               "id": movie.id,
+               "title": movie.title,
+               "end_at": movie.end_at.isoformat() if movie.end_at else None
+           })
+       return result
    except Exception as e:
        logger.error(f"만료 임박 영화 조회 오류: {str(e)}")
+       logger.error(traceback.format_exc())
        raise HTTPException(status_code=500, detail=f"만료 임박 영화 조회 중 오류 발생: {str(e)}")
 
 @router.get("/movie-stats", response_model=MovieStats)
@@ -182,6 +194,8 @@ async def get_sl_interpreter_stats(
 ):
    """수어통역사 통계 정보 조회"""
    try:
+       logger.info(f"[sl-interpreter-stats] 요청 시작 - user: {current_user.id}")
+
        # 전체 수어통역사 수
        interpreter_count_result = db.exec(select(func.count()).select_from(SLInterpreter)).one_or_none()
        interpreter_count = interpreter_count_result[0] if interpreter_count_result and isinstance(interpreter_count_result, tuple) else (interpreter_count_result if interpreter_count_result else 0)
@@ -190,12 +204,15 @@ async def get_sl_interpreter_stats(
        samples_count_result = db.exec(select(func.count()).select_from(SLInterpreterSample)).one_or_none()
        samples_count = samples_count_result[0] if samples_count_result and isinstance(samples_count_result, tuple) else (samples_count_result if samples_count_result else 0)
 
+       logger.info(f"[sl-interpreter-stats] 조회 완료 - interpreters: {interpreter_count}, samples: {samples_count}")
+
        return {
            "totalInterpreters": interpreter_count,
            "totalSamples": samples_count
        }
    except Exception as e:
        logger.error(f"수어통역사 통계 조회 오류: {str(e)}")
+       logger.error(traceback.format_exc())
        raise HTTPException(status_code=500, detail=f"수어통역사 통계 조회 중 오류 발생: {str(e)}")
 
 @router.get("/preferences", response_model=DashboardPreferences)
