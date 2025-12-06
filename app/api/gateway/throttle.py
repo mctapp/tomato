@@ -31,58 +31,68 @@ class AdaptiveThrottler:
         토큰 획득 시도 (Token Bucket Algorithm)
         Returns: (success, wait_time)
         """
-        # Redis 연결 확인 추가
-        await redis_client.ensure_connected()
-        
-        bucket_type = self._get_bucket_type(endpoint)
-        config = self.bucket_configs[bucket_type]
-        
-        key = f"throttle:{identifier}:{endpoint}"
-        now = time.time()
-        
-        # Lua 스크립트로 원자적 처리
-        lua_script = """
-        local key = KEYS[1]
-        local capacity = tonumber(ARGV[1])
-        local refill_rate = tonumber(ARGV[2])
-        local requested = tonumber(ARGV[3])
-        local now = tonumber(ARGV[4])
-        
-        local bucket = redis.call('HMGET', key, 'tokens', 'last_refill')
-        local tokens = tonumber(bucket[1]) or capacity
-        local last_refill = tonumber(bucket[2]) or now
-        
-        -- 토큰 리필
-        local time_passed = now - last_refill
-        local tokens_to_add = time_passed * refill_rate
-        tokens = math.min(capacity, tokens + tokens_to_add)
-        
-        -- 토큰 사용 시도
-        if tokens >= requested then
-            tokens = tokens - requested
-            redis.call('HMSET', key, 'tokens', tokens, 'last_refill', now)
-            redis.call('EXPIRE', key, 3600)
-            return {1, 0}  -- success, no wait
-        else
-            local wait_time = (requested - tokens) / refill_rate
-            return {0, wait_time}  -- fail, wait time
-        end
-        """
-        
-        result = await redis_client.redis.eval(
-            lua_script,
-            1,
-            key,
-            config["capacity"],
-            config["refill_rate"],
-            tokens,
-            now
-        )
-        
-        success = result[0] == 1
-        wait_time = result[1]
-        
-        return success, wait_time
+        try:
+            # Redis 연결 확인 및 획득
+            await redis_client.ensure_connected()
+
+            # Redis 인스턴스 안전하게 획득
+            if redis_client._redis is None or not redis_client._connected:
+                # Redis 사용 불가 시 throttling 스킵
+                return True, 0
+
+            bucket_type = self._get_bucket_type(endpoint)
+            config = self.bucket_configs[bucket_type]
+
+            key = f"throttle:{identifier}:{endpoint}"
+            now = time.time()
+
+            # Lua 스크립트로 원자적 처리
+            lua_script = """
+            local key = KEYS[1]
+            local capacity = tonumber(ARGV[1])
+            local refill_rate = tonumber(ARGV[2])
+            local requested = tonumber(ARGV[3])
+            local now = tonumber(ARGV[4])
+
+            local bucket = redis.call('HMGET', key, 'tokens', 'last_refill')
+            local tokens = tonumber(bucket[1]) or capacity
+            local last_refill = tonumber(bucket[2]) or now
+
+            -- 토큰 리필
+            local time_passed = now - last_refill
+            local tokens_to_add = time_passed * refill_rate
+            tokens = math.min(capacity, tokens + tokens_to_add)
+
+            -- 토큰 사용 시도
+            if tokens >= requested then
+                tokens = tokens - requested
+                redis.call('HMSET', key, 'tokens', tokens, 'last_refill', now)
+                redis.call('EXPIRE', key, 3600)
+                return {1, 0}  -- success, no wait
+            else
+                local wait_time = (requested - tokens) / refill_rate
+                return {0, wait_time}  -- fail, wait time
+            end
+            """
+
+            result = await redis_client._redis.eval(
+                lua_script,
+                1,
+                key,
+                config["capacity"],
+                config["refill_rate"],
+                tokens,
+                now
+            )
+
+            success = result[0] == 1
+            wait_time = result[1]
+
+            return success, wait_time
+        except Exception as e:
+            # Redis 에러 시 throttling 스킵 (서비스 우선)
+            print(f"⚠️ Throttling skipped due to Redis error: {e}")
+            return True, 0
     
     def _get_bucket_type(self, endpoint: str) -> str:
         """엔드포인트별 버킷 타입 결정"""
