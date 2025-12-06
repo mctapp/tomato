@@ -60,6 +60,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { Role } from '@/types/auth';
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { apiClient } from '@/lib/utils/api-client';
@@ -237,7 +238,7 @@ function IPManagementContent() {
 
   const handleToggleActive = async (ip: AllowedIP) => {
     try {
-      await apiClient.put(`/api/admin/ip-management/allowed-ips/${ip.id}/toggle`);
+      await apiClient.put(`/api/admin/ip-management/allowed-ips/${ip.id}/toggle`, {});
       toast.success(ip.is_active ? 'IP가 비활성화되었습니다.' : 'IP가 활성화되었습니다.');
       fetchAllowedIPs();
     } catch (error) {
@@ -731,7 +732,7 @@ function IPManagementContent() {
 
 export default function IPManagementPage() {
   return (
-    <ProtectedRoute requiredRoles={['SUPER_ADMIN']}>
+    <ProtectedRoute requiredRoles={[Role.SUPER_ADMIN]}>
       <Suspense fallback={
         <div className="max-w-[1200px] mx-auto py-10 flex justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
