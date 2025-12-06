@@ -1,10 +1,9 @@
 // /components/dashboard/cards/DatabaseBackupCard.tsx
 import { useEffect, useState } from 'react';
-import { Loader2, Save, Database, AlertTriangle, Calendar } from 'lucide-react';
+import { Loader2, Database, AlertTriangle, Calendar } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { BaseCard } from './BaseCard';
 import { format } from 'date-fns';
-import { useRouter } from 'next/navigation';
 import { BUTTON_STYLES } from '@/lib/dashboard/constants';
 import { apiClient } from '@/lib/utils/api-client';
 
@@ -29,7 +28,6 @@ const DatabaseBackupCard = () => {
  }>>([]);
  const [isLoading, setIsLoading] = useState(true);
  const [error, setError] = useState<string | null>(null);
- const router = useRouter();
 
  useEffect(() => {
    const fetchRecentBackups = async () => {
@@ -54,19 +52,14 @@ const DatabaseBackupCard = () => {
    return () => clearInterval(interval);
  }, []);
 
- // 백업 생성 페이지로 이동
- const goToBackupCreation = () => {
-   router.push('/database?tab=backups');
- };
-
- // 백업 개요 페이지로 이동
+ // 백업 개요 페이지로 새 창에서 열기
  const goToBackupOverview = () => {
-   router.push('/database?tab=overview');
+   window.open('/database?tab=backups', '_blank');
  };
 
- // 예약 백업 페이지로 이동
+ // 예약 백업 페이지로 새 창에서 열기
  const goToScheduledBackup = () => {
-   router.push('/database?tab=backups&schedule=schedule');
+   window.open('/database?tab=backups&schedule=schedule', '_blank');
  };
 
  const renderContent = () => {
@@ -120,29 +113,21 @@ const DatabaseBackupCard = () => {
  };
  
  const renderFooter = () => (
-   <div className="w-full grid grid-cols-3 gap-2">
+   <div className="w-full grid grid-cols-2 gap-2">
      <Button
        variant="outline"
        className={BUTTON_STYLES.leftButton}
        onClick={goToBackupOverview}
      >
-       <Database className="h-4 w-4 mr-1" />
+       <Database className="h-4 w-4 mr-2" />
        백업 개요
-     </Button>
-     <Button
-       variant="outline"
-       className="text-xs h-8"
-       onClick={goToBackupCreation}
-     >
-       <Save className="h-4 w-4 mr-1" />
-       백업 생성
      </Button>
      <Button
        variant="outline"
        className={BUTTON_STYLES.rightButton}
        onClick={goToScheduledBackup}
      >
-       <Calendar className="h-4 w-4 mr-1" />
+       <Calendar className="h-4 w-4 mr-2" />
        예약 백업
      </Button>
    </div>
