@@ -278,7 +278,7 @@ function UsersContent() {
 
 export default function UsersPage() {
   return (
-    <ProtectedRoute requiredRoles={['SUPER_ADMIN', 'ADMIN']}>
+    <ProtectedRoute requiredRoles={[Role.SUPER_ADMIN, Role.ADMIN]}>
       <Suspense fallback={
         <div className="max-w-[1200px] mx-auto py-10 flex justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
