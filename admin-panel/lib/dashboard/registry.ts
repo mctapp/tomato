@@ -18,6 +18,7 @@ import FileTypeCard from '@/components/dashboard/cards/FileTypeCard';
 import ScriptwriterCard from '@/components/dashboard/cards/ScriptwriterCard';
 import StaffCard from '@/components/dashboard/cards/StaffCard';
 import SLInterpreterCard from '@/components/dashboard/cards/SLInterpreterCard';
+import IPManagementCard from '@/components/dashboard/cards/IPManagementCard';
 
 // Card definitions
 const cardDefinitions: CardDefinition[] = [
@@ -160,6 +161,16 @@ const cardDefinitions: CardDefinition[] = [
     component: SLInterpreterCard,
     defaultVisible: true,
     order: 15,
+  },
+  {
+    id: 'ip-management',
+    title: '접속 IP 관리',
+    type: 'ip-management',
+    description: '허용된 IP 주소를 관리합니다',
+    component: IPManagementCard,
+    defaultVisible: true,
+    allowedRoles: [Role.SUPER_ADMIN],
+    order: 16,
   },
 ];
 

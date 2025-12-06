@@ -16,6 +16,7 @@ import {
   PenTool,
   UserCog,
   Hand,
+  Shield,
   LucideIcon
 } from 'lucide-react';
 import { CardType } from './types';
@@ -44,6 +45,7 @@ export const CARD_ICONS: Record<CardType, LucideIcon> = {
   'scriptwriter': PenTool,
   'staff': UserCog,
   'sl-interpreter': Hand,
+  'ip-management': Shield,
 };
 
 export const BUTTON_STYLES = {
