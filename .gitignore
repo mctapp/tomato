@@ -27,6 +27,7 @@ wheels/
 .env.*
 config.py
 !app/config.py
+!app/core/security/config.py
 secrets.json
 *.key
 *.pem
