@@ -18,7 +18,8 @@ export type CardType =
   | 'file-type'
   | 'scriptwriter'
   | 'staff'
-  | 'sl-interpreter';
+  | 'sl-interpreter'
+  | 'ip-management';
 
 export interface CardDefinition {
   id: string;

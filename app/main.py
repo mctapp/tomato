@@ -213,7 +213,7 @@ from app.routes import (
     admin_todos,
     admin_voice_artists,
     file_server,
-    admin_database,  
+    admin_database,
     admin_sl_interpreters,
     admin_scriptwriters,
     admin_staffs,
@@ -222,6 +222,7 @@ from app.routes import (
     admin_production_templates,
     admin_production_memo,
     api_keys,
+    admin_ip_management,
 )
 
 app.include_router(admin_movies.router)
@@ -248,6 +249,7 @@ app.include_router(admin_production_kanban.router)
 app.include_router(admin_production_templates.router)
 app.include_router(admin_production_memo.router)
 app.include_router(api_keys.router)
+app.include_router(admin_ip_management.router)
 
 # ── Next.js 프론트엔드 정적 파일 서빙 ────────────────────────────────────────
 # 빌드된 Next.js 앱 경로 설정
