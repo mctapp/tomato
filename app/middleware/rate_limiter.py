@@ -359,19 +359,28 @@ rate_limiter = DynamicRateLimiter()
 # 미들웨어 클래스 추가
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """독립적인 Rate Limit 미들웨어"""
-    
+
     async def dispatch(self, request: Request, call_next):
         # 헬스체크와 정적 파일은 스킵
         skip_paths = ["/health", "/docs", "/redoc", "/openapi.json", "/_next", "/public"]
         if any(request.url.path.startswith(path) for path in skip_paths):
             return await call_next(request)
-        
+
+        # Redis 연결 상태 확인 - 연결 안 되어 있으면 rate limiting 스킵
+        redis_connected = getattr(request.app.state, 'redis_connected', False)
+        if not redis_connected:
+            return await call_next(request)
+
         # 사용자와 API 키 정보 가져오기
         user = getattr(request.state, 'user', None)
         api_key = getattr(request.state, 'api_key', None)
-        
-        # Rate limit 체크
-        allowed, rate_info = await rate_limiter.check_limit(request, user, api_key)
+
+        # Rate limit 체크 - Redis 오류 시 통과
+        try:
+            allowed, rate_info = await rate_limiter.check_limit(request, user, api_key)
+        except Exception as e:
+            print(f"⚠️ Rate limit check failed: {e}")
+            return await call_next(request)
         
         if not allowed:
             # JSONResponse 직접 반환
