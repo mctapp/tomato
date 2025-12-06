@@ -1,10 +1,12 @@
 # app/main.py (DebugLoginMiddleware 삭제 버전)
 from __future__ import annotations
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.routes import api_keys
 from app.core.redis import redis_client
 from app.monitoring import initialize_monitoring, shutdown_monitoring
@@ -18,6 +20,12 @@ from app.middleware.rate_limiter import RateLimitMiddleware
 from app.core.security.config import security_config
 from app.config import settings
 import os
+import logging
+import traceback
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # 전역 IP 필터 인스턴스 (startup 메서드 호출을 위해)
 ip_filter_instance = None
@@ -94,6 +102,27 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# 전역 예외 핸들러 - 잡히지 않은 모든 에러를 로깅
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """모든 예외를 잡아서 로깅"""
+    logger.error(f"[GLOBAL ERROR] {request.method} {request.url.path}")
+    logger.error(f"[GLOBAL ERROR] Exception: {type(exc).__name__}: {str(exc)}")
+    logger.error(f"[GLOBAL ERROR] Traceback:\n{traceback.format_exc()}")
+
+    # HTTPException은 원래 상태 코드 유지
+    if isinstance(exc, (HTTPException, StarletteHTTPException)):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail}
+        )
+
+    # 그 외 예외는 500 반환
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {type(exc).__name__}"}
+    )
 
 # 미들웨어 설정 (순서 중요!)
 def setup_middleware(app: FastAPI):
