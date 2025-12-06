@@ -183,37 +183,41 @@ async def create_backup(
     db: Session = Depends(get_session)
 ):
     """DB 백업을 생성합니다."""
-    
+    from app.db import engine
+
     # 설명이 None인지 확인 - FastAPI가 빈 문자열을 None으로 처리할 수 있음
     if description == "":
         description = None
-    
+
     print(f"백업 요청 받음, 설명: {description}")
-    
-    def perform_backup():
-        try:
-            # 백업 생성
-            filename, file_size = create_backup_file(description)
-            
-            # 백업 메타데이터 저장
-            db_backup = DBBackup(
-                filename=filename,
-                description=description,  # description 값 저장
-                created_at=datetime.now(),
-                size_bytes=file_size
-            )
-            
-            print(f"생성할 DB 백업 정보: {filename}, 설명: {description}, 크기: {file_size} 바이트")
-            db.add(db_backup)
-            db.commit()
-            db.refresh(db_backup)  # ID 값을 확인하기 위해 refresh
-            print(f"백업 정보 DB 저장 완료: ID={db_backup.id}, 파일명={filename}, 설명={db_backup.description}")
-        except Exception as e:
-            print(f"백업 작업 실패: {e}")
-            raise e
-    
-    # 백그라운드에서 백업 실행
-    background_tasks.add_task(perform_backup)
+
+    def perform_backup(backup_description: Optional[str]):
+        # 백그라운드 태스크용 새 세션 생성 (기존 세션은 요청 종료 시 닫힘)
+        with Session(engine) as bg_db:
+            try:
+                # 백업 생성
+                filename, file_size = create_backup_file(backup_description)
+
+                # 백업 메타데이터 저장
+                db_backup = DBBackup(
+                    filename=filename,
+                    description=backup_description,
+                    created_at=datetime.now(),
+                    size_bytes=file_size
+                )
+
+                print(f"생성할 DB 백업 정보: {filename}, 설명: {backup_description}, 크기: {file_size} 바이트")
+                bg_db.add(db_backup)
+                bg_db.commit()
+                bg_db.refresh(db_backup)
+                print(f"백업 정보 DB 저장 완료: ID={db_backup.id}, 파일명={filename}, 설명={db_backup.description}")
+            except Exception as e:
+                print(f"백업 작업 실패: {e}")
+                import traceback
+                traceback.print_exc()
+
+    # 백그라운드에서 백업 실행 (description을 인자로 전달)
+    background_tasks.add_task(perform_backup, description)
     return {"message": "백업이 시작되었습니다.", "filename": f"tomato_db-backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"}
 
 @router.get("/backups")
