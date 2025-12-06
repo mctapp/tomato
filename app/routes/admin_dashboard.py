@@ -49,13 +49,13 @@ async def get_expiring_movies(
        movies = db.exec(query).all()
        logger.info(f"[expiring-movies] 조회 완료 - {len(movies)}개 영화")
 
-       # 수동으로 응답 데이터 변환 (response_model 검증 우회)
+       # 수동으로 응답 데이터 변환 (프론트엔드는 camelCase 기대)
        result = []
        for movie in movies:
            result.append({
                "id": movie.id,
                "title": movie.title,
-               "end_at": movie.end_at.isoformat() if movie.end_at else None
+               "endAt": movie.end_at.isoformat() if movie.end_at else None
            })
        return result
    except Exception as e:
