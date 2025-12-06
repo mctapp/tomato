@@ -19,7 +19,7 @@ import {
   Loader2, Save, RotateCcw, GripVertical, ArrowLeft, Settings,
   Code, User, Building, File, BarChart2, Users, Film, Clock,
   CheckSquare, Mic, BookOpen, Database, Menu, PenTool, UserCog, Hand,
-  FolderOpen
+  FolderOpen, Shield
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CardDefinition, CardType, DashboardPreferences } from "@/lib/dashboard/types";
@@ -78,6 +78,7 @@ function SortableItem({ id, card, isVisible, onToggleVisibility }: SortableItemP
       case 'scriptwriter': return PenTool;
       case 'staff': return UserCog;
       case 'sl-interpreter': return Hand;
+      case 'ip-management': return Shield;
       default: return Settings;
     }
   };
@@ -124,6 +125,7 @@ export default function DashboardSettingsPage() {
   const [visibleCards, setVisibleCards] = useState<string[]>([]);
   const [collapsedCards, setCollapsedCards] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>("cards");
+  const [userRole, setUserRole] = useState<Role>(Role.USER);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -134,8 +136,18 @@ export default function DashboardSettingsPage() {
     async function loadData() {
       try {
         setIsLoading(true);
-        
-        const cardDefinitions = getAvailableCards(Role.ADMIN);
+
+        // 사용자 역할 가져오기
+        let role = Role.USER;
+        try {
+          const user = await apiClient.get<{ role: Role }>('/api/auth/me');
+          role = user.role;
+          setUserRole(role);
+        } catch (e) {
+          console.error('Failed to get user role:', e);
+        }
+
+        const cardDefinitions = getAvailableCards(role);
         setAvailableCards(cardDefinitions);
         
         const defaultCardOrder = cardDefinitions.map(card => card.id);
