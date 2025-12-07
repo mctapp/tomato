@@ -14,6 +14,7 @@ class ZeroTrustMiddleware(BaseHTTPMiddleware):
         self.zero_trust_flow = ZeroTrustFlow()
         self.skip_paths = [
             "/api/auth/login",
+            "/api/auth/logout",
             "/api/auth/mfa/verify",
             "/health",
             "/docs",
