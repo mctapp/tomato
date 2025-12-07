@@ -21,16 +21,31 @@ class RedisClient:
     
     async def connect(self):
         """Redis 연결"""
-        async with self._lock:
+        # Lock 획득 시도 (타임아웃 적용)
+        try:
+            await asyncio.wait_for(self._lock.acquire(), timeout=2.0)
+        except asyncio.TimeoutError:
+            # Lock 획득 타임아웃 - 다른 요청이 연결 중
+            # 현재 연결이 있으면 반환, 없으면 None
+            if self._redis is not None and self._connected:
+                return self._redis
+            return None
+
+        try:
             if self._redis is not None and self._connected:
                 # 이미 연결되어 있으면 연결 상태 확인
                 try:
-                    await self._redis.ping()
-                    return self._redis
+                    await asyncio.wait_for(self._redis.ping(), timeout=2.0)
+                    return self._redis  # finally에서 lock.release() 호출됨
                 except:
                     # 연결이 끊어졌으면 재연결
                     self._connected = False
-                    await self.disconnect()
+                    try:
+                        await self._redis.close()
+                    except:
+                        pass
+                    self._redis = None
+                    # 아래로 계속 진행하여 재연결
             
             # 설정 확인 - 새 방식(REDIS_HOST) 또는 이전 방식(REDIS_URL) 지원
             if hasattr(settings, 'REDIS_HOST'):
@@ -61,32 +76,54 @@ class RedisClient:
                 retry_on_timeout=True,
                 retry_on_error=[redis.ConnectionError, redis.TimeoutError],
             )
-            
-            # 연결 테스트
-            await self._redis.ping()
+
+            # 연결 테스트 (타임아웃 적용)
+            await asyncio.wait_for(self._redis.ping(), timeout=3.0)
             self._connected = True
             print("✅ Redis connected successfully!")
-                
-        return self._redis
+            return self._redis
+        except Exception as e:
+            print(f"⚠️ Redis connection failed in connect(): {e}")
+            self._connected = False
+            if self._redis:
+                try:
+                    await self._redis.close()
+                except:
+                    pass
+                self._redis = None
+            return None
+        finally:
+            self._lock.release()
     
     async def disconnect(self):
         """Redis 연결 해제"""
-        async with self._lock:
+        try:
+            await asyncio.wait_for(self._lock.acquire(), timeout=2.0)
+        except asyncio.TimeoutError:
+            return
+
+        try:
             if self._redis:
-                await self._redis.close()
+                try:
+                    await self._redis.close()
+                except:
+                    pass
                 self._redis = None
                 self._connected = False
+        finally:
+            self._lock.release()
     
     async def ensure_connected(self):
         """연결 상태 확인 및 재연결"""
         if not self._connected or self._redis is None:
-            await self.connect()
+            return await self.connect()
         else:
             try:
-                await self._redis.ping()
+                await asyncio.wait_for(self._redis.ping(), timeout=2.0)
+                return self._redis
             except:
                 self._connected = False
-                await self.connect()
+                return await self.connect()
 
     async def get_connection(self) -> Optional[redis.Redis]:
         """안전하게 Redis 연결 획득 (실패 시 None 반환)"""
