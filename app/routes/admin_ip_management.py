@@ -393,6 +393,8 @@ async def get_ip_stats(
     # 현재 활성 세션 수
     active_sessions = 0
     try:
+        from datetime import timezone
+        import json
         await redis_client.ensure_connected()
         cursor = 0
         while True:
@@ -405,11 +407,13 @@ async def get_ip_stats(
                 try:
                     session_data = await redis_client.redis.get(key)
                     if session_data:
-                        import json
                         session = json.loads(session_data)
-                        expires_at = datetime.fromisoformat(session.get("expires_at", "").replace("Z", "+00:00"))
-                        if expires_at > datetime.now(expires_at.tzinfo):
-                            active_sessions += 1
+                        expires_str = session.get("expires_at", "")
+                        if expires_str:
+                            expires_at = datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
+                            now_utc = datetime.now(timezone.utc)
+                            if expires_at > now_utc:
+                                active_sessions += 1
                 except Exception:
                     continue
             if cursor == 0:
@@ -434,12 +438,22 @@ async def get_active_sessions(
     """현재 활성 세션 목록을 조회합니다."""
     from app.core.redis import redis_client
     from app.models.users import User as UserModel
+    import json
+    from datetime import timezone
+
+    debug_info = {
+        "keys_found": 0,
+        "sessions_parsed": 0,
+        "sessions_valid": 0,
+        "parse_errors": []
+    }
 
     try:
         await redis_client.ensure_connected()
 
         active_sessions = []
         cursor = 0
+        all_keys = []
 
         # Redis에서 모든 세션 스캔
         while True:
@@ -448,33 +462,44 @@ async def get_active_sessions(
                 match="session:*",
                 count=100
             )
-
-            for key in keys:
-                try:
-                    session_data = await redis_client.redis.get(key)
-                    if session_data:
-                        import json
-                        session = json.loads(session_data)
-
-                        # 만료되지 않은 세션만 포함
-                        expires_at = datetime.fromisoformat(session.get("expires_at", "").replace("Z", "+00:00"))
-                        if expires_at > datetime.now(expires_at.tzinfo):
-                            active_sessions.append({
-                                "session_id": session.get("session_id", "")[:8] + "...",  # 보안을 위해 일부만
-                                "user_id": session.get("user_id"),
-                                "ip_address": session.get("ip_address"),
-                                "device_name": session.get("device_name"),
-                                "device_type": session.get("device_type"),
-                                "last_activity": session.get("last_activity"),
-                                "created_at": session.get("created_at"),
-                                "location": session.get("location")
-                            })
-                except Exception as e:
-                    print(f"세션 파싱 오류: {e}")
-                    continue
+            all_keys.extend(keys)
 
             if cursor == 0:
                 break
+
+        debug_info["keys_found"] = len(all_keys)
+
+        for key in all_keys:
+            try:
+                session_data = await redis_client.redis.get(key)
+                if session_data:
+                    debug_info["sessions_parsed"] += 1
+                    session = json.loads(session_data)
+
+                    # 만료되지 않은 세션만 포함
+                    expires_str = session.get("expires_at", "")
+                    if not expires_str:
+                        debug_info["parse_errors"].append(f"No expires_at in session")
+                        continue
+
+                    expires_at = datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
+                    now_utc = datetime.now(timezone.utc)
+
+                    if expires_at > now_utc:
+                        debug_info["sessions_valid"] += 1
+                        active_sessions.append({
+                            "session_id": session.get("session_id", "")[:8] + "...",  # 보안을 위해 일부만
+                            "user_id": session.get("user_id"),
+                            "ip_address": session.get("ip_address"),
+                            "device_name": session.get("device_name"),
+                            "device_type": session.get("device_type"),
+                            "last_activity": session.get("last_activity"),
+                            "created_at": session.get("created_at"),
+                            "location": session.get("location")
+                        })
+            except Exception as e:
+                debug_info["parse_errors"].append(f"{key}: {str(e)}")
+                continue
 
         # 사용자 정보 조회
         user_ids = list(set(s["user_id"] for s in active_sessions if s.get("user_id")))
@@ -499,13 +524,16 @@ async def get_active_sessions(
 
         return {
             "active_sessions": active_sessions,
-            "total_count": len(active_sessions)
+            "total_count": len(active_sessions),
+            "debug": debug_info
         }
 
     except Exception as e:
-        print(f"활성 세션 조회 오류: {e}")
+        import traceback
         return {
             "active_sessions": [],
             "total_count": 0,
-            "error": str(e)
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "debug": debug_info
         }

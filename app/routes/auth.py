@@ -30,9 +30,16 @@ from app.services.encryption.field_encryption import field_encryption_service
 from app.core.redis import redis_client
 from app.auth.zero_trust.flow import ZeroTrustFlow
 from app.auth.devices.trust import DeviceTrustManager
+from app.config import get_settings
 from datetime import datetime
+import os
 
 router = APIRouter(prefix="/api/auth")
+
+# 쿠키 보안 설정 (프로덕션에서만 secure=True)
+def is_production():
+    settings = get_settings()
+    return settings.ENVIRONMENT == "production"
 
 # MFA 관련 인스턴스
 mfa_manager = MFAManager()
@@ -315,11 +322,12 @@ async def login(
             print(f"Failed to trust device: {e}")
 
     # HttpOnly 쿠키 설정
+    secure_cookies = is_production()
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,  # HTTPS 환경에서만 전송
+        secure=secure_cookies,  # 프로덕션에서만 HTTPS 필수
         samesite="lax",  # CSRF 방어
         max_age=int(ACCESS_TOKEN_EXPIRE_MINUTES * 60),  # 초 단위
         path="/"
@@ -331,7 +339,7 @@ async def login(
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=True,
+            secure=secure_cookies,
             samesite="lax",
             max_age=SESSION_TTL,
             path="/"
@@ -416,11 +424,12 @@ async def verify_mfa(
         print(f"MFA 후 세션 생성 오류 (계속 진행): {e}")
 
     # HttpOnly 쿠키 설정
+    secure_cookies = is_production()
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=secure_cookies,
         samesite="lax",
         max_age=int(ACCESS_TOKEN_EXPIRE_MINUTES * 60),
         path="/"
@@ -432,7 +441,7 @@ async def verify_mfa(
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=True,
+            secure=secure_cookies,
             samesite="lax",
             max_age=SESSION_TTL,
             path="/"
@@ -604,16 +613,17 @@ async def logout(request: Request, response: Response) -> Any:
             print(f"세션 삭제 오류: {e}")
 
     # 쿠키 삭제
+    secure_cookies = is_production()
     response.delete_cookie(
         key="access_token",
         path="/",
-        secure=True,
+        secure=secure_cookies,
         samesite="lax"
     )
     response.delete_cookie(
         key="session_id",
         path="/",
-        secure=True,
+        secure=secure_cookies,
         samesite="lax"
     )
     return {"message": "Successfully logged out"}
