@@ -21,7 +21,10 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Users,
+  Monitor,
+  Smartphone
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -93,6 +96,22 @@ interface CurrentIP {
   is_registered: boolean;
 }
 
+interface ActiveSession {
+  session_id: string;
+  user_id: number;
+  ip_address: string;
+  device_name: string | null;
+  device_type: string;
+  last_activity: string;
+  created_at: string;
+  username: string;
+  name: string;
+  location: {
+    country: string;
+    city: string | null;
+  } | null;
+}
+
 function IPManagementContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -126,6 +145,10 @@ function IPManagementContent() {
   const [ipLogs, setIPLogs] = useState<AccessLog[]>([]);
   const [deleteLogsDialogOpen, setDeleteLogsDialogOpen] = useState(false);
 
+  // 현재 접속자
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
   // URL 파라미터에서 탭 초기화
   useEffect(() => {
     const tab = searchParams.get('tab') || 'list';
@@ -137,6 +160,7 @@ function IPManagementContent() {
     fetchCurrentIP();
     fetchAllowedIPs();
     fetchAccessLogs();
+    fetchActiveSessions();
   }, [currentPage]);
 
   // 30초마다 자동 갱신 (실시간 반영)
@@ -144,6 +168,7 @@ function IPManagementContent() {
     const interval = setInterval(() => {
       fetchCurrentIP();
       fetchAllowedIPs();
+      fetchActiveSessions();
       if (activeTab === 'logs') {
         fetchAccessLogs();
       }
@@ -198,6 +223,20 @@ function IPManagementContent() {
     } catch (error) {
       console.error('IP 로그 조회 실패:', error);
       toast.error('접속 로그를 불러오는데 실패했습니다.');
+    }
+  };
+
+  const fetchActiveSessions = async () => {
+    try {
+      setSessionsLoading(true);
+      const data = await apiClient.get<{ active_sessions: ActiveSession[]; total_count: number }>(
+        '/api/admin/ip-management/active-sessions'
+      );
+      setActiveSessions(data.active_sessions);
+    } catch (error) {
+      console.error('활성 세션 조회 실패:', error);
+    } finally {
+      setSessionsLoading(false);
     }
   };
 
@@ -306,11 +345,100 @@ function IPManagementContent() {
 
       {/* 탭 */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="online">현재 접속자</TabsTrigger>
           <TabsTrigger value="list">IP 목록</TabsTrigger>
           <TabsTrigger value="register">IP 등록</TabsTrigger>
           <TabsTrigger value="logs">접속 로그</TabsTrigger>
         </TabsList>
+
+        {/* 현재 접속자 탭 */}
+        <TabsContent value="online">
+          <Card className="border border-gray-300 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden">
+            <CardHeader className="p-4 pb-2 bg-white">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-lg font-medium text-[#333333] flex items-center">
+                    <Users className="h-5 w-5 mr-2 text-[#ff6246]" />
+                    현재 접속 중인 사용자
+                  </CardTitle>
+                  <CardDescription>
+                    실시간 접속 현황 (총 {activeSessions.length}명)
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchActiveSessions} disabled={sessionsLoading}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${sessionsLoading ? 'animate-spin' : ''}`} />
+                  새로고침
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              {sessionsLoading && activeSessions.length === 0 ? (
+                <div className="w-full py-24 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+              ) : activeSessions.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <Users className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500">현재 접속 중인 사용자가 없습니다.</p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="w-[120px]">사용자</TableHead>
+                        <TableHead className="w-[150px]">IP 주소</TableHead>
+                        <TableHead className="w-[120px]">디바이스</TableHead>
+                        <TableHead className="w-[150px]">마지막 활동</TableHead>
+                        <TableHead className="w-[150px]">접속 시간</TableHead>
+                        <TableHead>위치</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activeSessions.map((session) => (
+                        <TableRow key={session.session_id} className="hover:bg-gray-50">
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{session.name || session.username}</p>
+                              <p className="text-xs text-gray-500">@{session.username}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-sm">{session.ip_address}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              {session.device_type === 'web' ? (
+                                <Monitor className="h-4 w-4 mr-2 text-gray-500" />
+                              ) : (
+                                <Smartphone className="h-4 w-4 mr-2 text-gray-500" />
+                              )}
+                              <span className="text-sm">{session.device_name || session.device_type}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {session.last_activity ? (
+                              format(parseISO(session.last_activity), 'MM-dd HH:mm:ss', { locale: ko })
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {session.created_at ? (
+                              format(parseISO(session.created_at), 'MM-dd HH:mm', { locale: ko })
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-500">
+                            {session.location ? `${session.location.country}${session.location.city ? `, ${session.location.city}` : ''}` : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* IP 목록 탭 */}
         <TabsContent value="list">

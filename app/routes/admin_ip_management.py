@@ -368,6 +368,8 @@ async def get_ip_stats(
     current_user: User = Depends(require_super_admin)
 ):
     """IP 관리 통계를 조회합니다."""
+    from app.core.redis import redis_client
+
     # 전체 등록된 IP 수
     total_ips = len(db.exec(select(AllowedIP)).all())
 
@@ -388,10 +390,120 @@ async def get_ip_stats(
         select(AccessLog).where(AccessLog.accessed_at >= today_start)
     ).all())
 
+    # 현재 활성 세션 수
+    active_sessions = 0
+    try:
+        await redis_client.ensure_connected()
+        cursor = 0
+        while True:
+            cursor, keys = await redis_client.redis.scan(
+                cursor,
+                match="session:*",
+                count=100
+            )
+            for key in keys:
+                try:
+                    session_data = await redis_client.redis.get(key)
+                    if session_data:
+                        import json
+                        session = json.loads(session_data)
+                        expires_at = datetime.fromisoformat(session.get("expires_at", "").replace("Z", "+00:00"))
+                        if expires_at > datetime.now(expires_at.tzinfo):
+                            active_sessions += 1
+                except Exception:
+                    continue
+            if cursor == 0:
+                break
+    except Exception as e:
+        print(f"활성 세션 수 조회 오류: {e}")
+
     return {
         "total_ips": total_ips,
         "active_ips": active_ips,
         "inactive_ips": total_ips - active_ips,
         "recent_logs_30d": recent_logs,
-        "today_logs": today_logs
+        "today_logs": today_logs,
+        "active_sessions": active_sessions
     }
+
+
+@router.get("/active-sessions")
+async def get_active_sessions(
+    current_user: User = Depends(require_super_admin)
+):
+    """현재 활성 세션 목록을 조회합니다."""
+    from app.core.redis import redis_client
+    from app.models.users import User as UserModel
+
+    try:
+        await redis_client.ensure_connected()
+
+        active_sessions = []
+        cursor = 0
+
+        # Redis에서 모든 세션 스캔
+        while True:
+            cursor, keys = await redis_client.redis.scan(
+                cursor,
+                match="session:*",
+                count=100
+            )
+
+            for key in keys:
+                try:
+                    session_data = await redis_client.redis.get(key)
+                    if session_data:
+                        import json
+                        session = json.loads(session_data)
+
+                        # 만료되지 않은 세션만 포함
+                        expires_at = datetime.fromisoformat(session.get("expires_at", "").replace("Z", "+00:00"))
+                        if expires_at > datetime.now(expires_at.tzinfo):
+                            active_sessions.append({
+                                "session_id": session.get("session_id", "")[:8] + "...",  # 보안을 위해 일부만
+                                "user_id": session.get("user_id"),
+                                "ip_address": session.get("ip_address"),
+                                "device_name": session.get("device_name"),
+                                "device_type": session.get("device_type"),
+                                "last_activity": session.get("last_activity"),
+                                "created_at": session.get("created_at"),
+                                "location": session.get("location")
+                            })
+                except Exception as e:
+                    print(f"세션 파싱 오류: {e}")
+                    continue
+
+            if cursor == 0:
+                break
+
+        # 사용자 정보 조회
+        user_ids = list(set(s["user_id"] for s in active_sessions if s.get("user_id")))
+
+        with Session(get_session().__next__()) as db:
+            users = db.exec(select(UserModel).where(UserModel.id.in_(user_ids))).all()
+            user_map = {u.id: {"username": u.username, "name": u.name} for u in users}
+
+        # 사용자 정보 병합
+        for session in active_sessions:
+            user_info = user_map.get(session["user_id"], {})
+            session["username"] = user_info.get("username", "알 수 없음")
+            session["name"] = user_info.get("name", "")
+
+        # 최근 활동 순으로 정렬
+        active_sessions.sort(
+            key=lambda s: s.get("last_activity", ""),
+            reverse=True
+        )
+
+        return {
+            "active_sessions": active_sessions,
+            "total_count": len(active_sessions)
+        }
+
+    except Exception as e:
+        print(f"활성 세션 조회 오류: {e}")
+        return {
+            "active_sessions": [],
+            "total_count": 0,
+            "error": str(e)
+        }
