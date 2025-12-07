@@ -139,6 +139,19 @@ function IPManagementContent() {
     fetchAccessLogs();
   }, [currentPage]);
 
+  // 30초마다 자동 갱신 (실시간 반영)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchCurrentIP();
+      fetchAllowedIPs();
+      if (activeTab === 'logs') {
+        fetchAccessLogs();
+      }
+    }, 30 * 1000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, currentPage]);
+
   const fetchCurrentIP = async () => {
     try {
       const data = await apiClient.get<CurrentIP>('/api/admin/ip-management/current-ip');

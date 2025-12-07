@@ -50,8 +50,8 @@ const IPManagementCard = () => {
 
     fetchData();
 
-    // 5분마다 데이터 갱신
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    // 30초마다 데이터 갱신 (실시간 반영)
+    const interval = setInterval(fetchData, 30 * 1000);
 
     return () => clearInterval(interval);
   }, []);
