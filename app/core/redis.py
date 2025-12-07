@@ -87,7 +87,18 @@ class RedisClient:
             except:
                 self._connected = False
                 await self.connect()
-    
+
+    async def get_connection(self) -> Optional[redis.Redis]:
+        """안전하게 Redis 연결 획득 (실패 시 None 반환)"""
+        try:
+            await self.ensure_connected()
+            if self._redis is not None and self._connected:
+                return self._redis
+            return None
+        except Exception as e:
+            print(f"⚠️ Redis connection failed: {e}")
+            return None
+
     @property
     def redis(self) -> redis.Redis:
         """Redis 인스턴스 반환"""
@@ -97,34 +108,42 @@ class RedisClient:
     
     # Rate Limiting 전용 메서드
     async def check_rate_limit(
-        self, 
-        key: str, 
-        limit: int, 
+        self,
+        key: str,
+        limit: int,
         window: int
     ) -> tuple[bool, int, int]:
         """
         Rate limit 확인
         Returns: (allowed, current_count, ttl)
         """
-        # 연결 확인
-        await self.ensure_connected()
-        
-        pipe = self.redis.pipeline()
-        now = datetime.utcnow().timestamp()
-        window_start = now - window
-        
-        # Sliding window log algorithm
-        pipe.zremrangebyscore(key, 0, window_start)
-        pipe.zadd(key, {str(now): now})
-        pipe.zcount(key, window_start, now)
-        pipe.expire(key, window)
-        pipe.ttl(key)
-        
-        results = await pipe.execute()
-        current_count = results[2]
-        ttl = results[4]
-        
-        return current_count <= limit, current_count, ttl
+        # 연결 확인 및 redis 인스턴스 획득
+        redis_conn = await self.get_connection()
+        if redis_conn is None:
+            # Redis 연결 실패 시 rate limit 통과
+            return True, 0, window
+
+        try:
+            pipe = redis_conn.pipeline()
+            now = datetime.utcnow().timestamp()
+            window_start = now - window
+
+            # Sliding window log algorithm
+            pipe.zremrangebyscore(key, 0, window_start)
+            pipe.zadd(key, {str(now): now})
+            pipe.zcount(key, window_start, now)
+            pipe.expire(key, window)
+            pipe.ttl(key)
+
+            results = await pipe.execute()
+            current_count = results[2]
+            ttl = results[4]
+
+            return current_count <= limit, current_count, ttl
+        except Exception as e:
+            # Redis 작업 실패 시 rate limit 통과
+            print(f"⚠️ Redis rate limit check failed: {e}")
+            return True, 0, window
     
     # 유틸리티 메서드들
     async def set_with_expiry(self, key: str, value: any, expire_seconds: int):
