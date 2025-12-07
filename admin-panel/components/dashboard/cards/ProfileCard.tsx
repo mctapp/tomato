@@ -53,20 +53,19 @@ const ProfileCard = () => {
   // 로그아웃 함수
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
-    
+
     try {
       // /admin 제거
       await apiClient.post('/api/auth/logout', {});
-      
       toast.success('로그아웃 되었습니다');
-      
-      // 로그인 페이지로 리다이렉트
-      router.push('/auth/login');
     } catch (error) {
       console.error('로그아웃 실패:', error);
-      toast.error('로그아웃 중 오류가 발생했습니다');
-      setIsLoggingOut(false);
+      // API 실패해도 로컬에서는 로그아웃 처리
+      toast.info('세션이 종료되었습니다');
     }
+
+    // API 성공/실패와 관계없이 항상 로그인 페이지로 리다이렉트
+    router.push('/auth/login');
   }, [router]);
   
   // 역할 라벨 가져오기
@@ -124,8 +123,9 @@ const ProfileCard = () => {
   
   // 로그아웃 버튼
   const renderFooter = () => (
-    <Button 
-      variant="outline" 
+    <Button
+      type="button"
+      variant="outline"
       className={BUTTON_STYLES.rightButton}
       onClick={handleLogout}
       disabled={isLoggingOut}
