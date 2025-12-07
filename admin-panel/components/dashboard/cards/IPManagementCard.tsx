@@ -1,6 +1,6 @@
 // /components/dashboard/cards/IPManagementCard.tsx
 import { useEffect, useState } from 'react';
-import { Loader2, Shield, List, PlusCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Shield, List, PlusCircle, AlertTriangle, Users } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { BaseCard } from './BaseCard';
 import { BUTTON_STYLES } from '@/lib/dashboard/constants';
@@ -18,6 +18,7 @@ interface IPStats {
   inactive_ips: number;
   recent_logs_30d: number;
   today_logs: number;
+  active_sessions: number;
 }
 
 const IPManagementCard = () => {
@@ -109,7 +110,11 @@ const IPManagementCard = () => {
 
         {/* 통계 */}
         {stats && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="text-center p-2 bg-green-50 rounded-lg">
+              <p className="text-xl font-bold text-green-600">{stats.active_sessions || 0}</p>
+              <p className="text-xs text-gray-500">접속 중</p>
+            </div>
             <div className="text-center p-2 bg-blue-50 rounded-lg">
               <p className="text-xl font-bold text-blue-600">{stats.active_ips}</p>
               <p className="text-xs text-gray-500">활성 IP</p>
