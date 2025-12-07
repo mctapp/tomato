@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
-from app.db import get_session
+from app.db import get_session, engine
 from datetime import datetime, timedelta
 from typing import Optional, List
 import ipaddress
@@ -479,9 +479,11 @@ async def get_active_sessions(
         # 사용자 정보 조회
         user_ids = list(set(s["user_id"] for s in active_sessions if s.get("user_id")))
 
-        with Session(get_session().__next__()) as db:
-            users = db.exec(select(UserModel).where(UserModel.id.in_(user_ids))).all()
-            user_map = {u.id: {"username": u.username, "name": u.name} for u in users}
+        user_map = {}
+        if user_ids:
+            with Session(engine) as db:
+                users = db.exec(select(UserModel).where(UserModel.id.in_(user_ids))).all()
+                user_map = {u.id: {"username": u.username, "name": u.name} for u in users}
 
         # 사용자 정보 병합
         for session in active_sessions:
