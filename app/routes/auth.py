@@ -30,6 +30,7 @@ from app.services.encryption.field_encryption import field_encryption_service
 from app.core.redis import redis_client
 from app.auth.zero_trust.flow import ZeroTrustFlow
 from app.auth.devices.trust import DeviceTrustManager
+from datetime import datetime
 
 router = APIRouter(prefix="/api/auth")
 
@@ -40,6 +41,95 @@ totp_provider = TOTPProvider()
 # Zero Trust 인스턴스 (DB가 필요없는 것만)
 zero_trust_flow = ZeroTrustFlow()
 # device_trust_manager는 각 함수에서 생성
+
+# 세션 TTL (24시간)
+SESSION_TTL = 60 * 60 * 24
+
+
+async def create_user_session(
+    user_id: int,
+    request: Request,
+    device_id: str = None
+) -> str:
+    """Redis에 사용자 세션을 생성합니다."""
+    session_id = secrets.token_urlsafe(32)
+
+    # 클라이언트 IP 추출
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        ip_address = forwarded_for.split(",")[0].strip()
+    else:
+        ip_address = request.client.host if request.client else "unknown"
+
+    # 디바이스 정보 추출
+    user_agent = request.headers.get("User-Agent", "")
+    device_name = "Unknown Device"
+    device_type = "web"
+
+    if "iPhone" in user_agent or "iPad" in user_agent:
+        device_name = "iPhone/iPad"
+        device_type = "ios"
+    elif "Android" in user_agent:
+        device_name = "Android Device"
+        device_type = "android"
+    elif "Windows" in user_agent:
+        device_name = "Windows PC"
+    elif "Mac" in user_agent:
+        device_name = "Mac"
+    elif "Linux" in user_agent:
+        device_name = "Linux PC"
+
+    now = datetime.utcnow()
+    expires_at = now + timedelta(seconds=SESSION_TTL)
+
+    session_data = {
+        "session_id": session_id,
+        "user_id": user_id,
+        "device_id": device_id or "",
+        "device_type": device_type,
+        "device_name": device_name,
+        "ip_address": ip_address,
+        "user_agent": user_agent[:500],
+        "location": None,
+        "created_at": now.isoformat() + "Z",
+        "last_activity": now.isoformat() + "Z",
+        "expires_at": expires_at.isoformat() + "Z",
+        "is_trusted": False,
+        "mfa_verified": False,
+        "metadata": {}
+    }
+
+    # Redis에 세션 저장
+    await redis_client.set(
+        f"session:{session_id}",
+        json.dumps(session_data),
+        expire=SESSION_TTL
+    )
+
+    # 사용자별 세션 인덱스 저장
+    await redis_client.redis.sadd(f"user_sessions:{user_id}", session_id)
+    await redis_client.redis.expire(f"user_sessions:{user_id}", SESSION_TTL)
+
+    return session_id
+
+
+async def delete_user_session(session_id: str):
+    """Redis에서 사용자 세션을 삭제합니다."""
+    try:
+        # 세션 데이터 조회
+        session_data = await redis_client.get(f"session:{session_id}")
+        if session_data:
+            session = json.loads(session_data)
+            user_id = session.get("user_id")
+
+            # 사용자 세션 인덱스에서 제거
+            if user_id:
+                await redis_client.redis.srem(f"user_sessions:{user_id}", session_id)
+
+        # 세션 삭제
+        await redis_client.delete(f"session:{session_id}")
+    except Exception as e:
+        print(f"세션 삭제 오류: {e}")
 
 class LoginRequest(BaseModel):
     username: str
@@ -209,6 +299,13 @@ async def login(
         expires_delta=access_token_expires
     )
 
+    # Redis에 세션 저장 (현재 접속자 추적용)
+    session_id = None
+    try:
+        session_id = await create_user_session(user.id, request, device_id)
+    except Exception as e:
+        print(f"세션 생성 오류 (계속 진행): {e}")
+
     # 신뢰할 수 있는 디바이스로 등록 (낮은 위험도인 경우)
     if device_id and risk_score <= 0.3 and not device_trusted:
         try:
@@ -227,6 +324,18 @@ async def login(
         max_age=int(ACCESS_TOKEN_EXPIRE_MINUTES * 60),  # 초 단위
         path="/"
     )
+
+    # 세션 ID도 쿠키에 저장 (로그아웃 시 삭제용)
+    if session_id:
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=SESSION_TTL,
+            path="/"
+        )
 
     return {
         "access_token": access_token,
@@ -298,7 +407,14 @@ async def verify_mfa(
         data={"sub": str(user.id)},
         expires_delta=access_token_expires
     )
-    
+
+    # Redis에 세션 저장 (현재 접속자 추적용)
+    session_id = None
+    try:
+        session_id = await create_user_session(user.id, request, device_id)
+    except Exception as e:
+        print(f"MFA 후 세션 생성 오류 (계속 진행): {e}")
+
     # HttpOnly 쿠키 설정
     response.set_cookie(
         key="access_token",
@@ -309,7 +425,19 @@ async def verify_mfa(
         max_age=int(ACCESS_TOKEN_EXPIRE_MINUTES * 60),
         path="/"
     )
-    
+
+    # 세션 ID도 쿠키에 저장 (로그아웃 시 삭제용)
+    if session_id:
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=SESSION_TTL,
+            path="/"
+        )
+
     return {
         "access_token": access_token,
         "user": {
@@ -466,10 +594,24 @@ async def get_mfa_status(
     )
 
 @router.post("/logout")
-async def logout(response: Response) -> Any:
+async def logout(request: Request, response: Response) -> Any:
+    # Redis에서 세션 삭제
+    session_id = request.cookies.get("session_id")
+    if session_id:
+        try:
+            await delete_user_session(session_id)
+        except Exception as e:
+            print(f"세션 삭제 오류: {e}")
+
     # 쿠키 삭제
     response.delete_cookie(
         key="access_token",
+        path="/",
+        secure=True,
+        samesite="lax"
+    )
+    response.delete_cookie(
+        key="session_id",
         path="/",
         secure=True,
         samesite="lax"
