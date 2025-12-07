@@ -362,7 +362,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         # 헬스체크와 정적 파일은 스킵
-        skip_paths = ["/health", "/docs", "/redoc", "/openapi.json", "/_next", "/public"]
+        skip_paths = ["/health", "/api/health", "/docs", "/redoc", "/openapi.json", "/_next", "/public"]
         if any(request.url.path.startswith(path) for path in skip_paths):
             return await call_next(request)
 
