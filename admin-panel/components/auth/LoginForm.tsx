@@ -23,6 +23,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { MFALoginResponse } from "@/types/auth";
+import { apiClient } from "@/lib/utils/api-client";
 
 // 로그인 폼 유효성 검증 스키마
 const loginSchema = z.object({
@@ -39,60 +40,18 @@ const mfaSchema = z.object({
 type LoginData = z.infer<typeof loginSchema>;
 type MFAData = z.infer<typeof mfaSchema>;
 
-// API 호출 함수
+// API 호출 함수 - apiClient를 사용하여 URL 일관성 보장
 async function loginUser(data: LoginData): Promise<MFALoginResponse> {
   const apiData = {
     username: data.email,
     password: data.password
   };
 
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(apiData),
-    credentials: 'include'
-  });
-
-  const responseText = await response.text();
-
-  if (!response.ok) {
-    let errorDetail;
-    try {
-      errorDetail = responseText ? JSON.parse(responseText) : { detail: `서버 오류: ${response.status}` };
-    } catch (e) {
-      errorDetail = { detail: responseText || `서버 오류: ${response.status}` };
-    }
-    throw errorDetail;
-  }
-
-  return JSON.parse(responseText);
+  return apiClient.post<MFALoginResponse>('/api/auth/login', apiData);
 }
 
 async function verifyMFA(code: string, mfaToken: string) {
-  const response = await fetch('/api/auth/mfa/verify', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ code, mfa_token: mfaToken }),
-    credentials: 'include'
-  });
-
-  const responseText = await response.text();
-
-  if (!response.ok) {
-    let errorDetail;
-    try {
-      errorDetail = responseText ? JSON.parse(responseText) : { detail: `서버 오류: ${response.status}` };
-    } catch (e) {
-      errorDetail = { detail: responseText || `서버 오류: ${response.status}` };
-    }
-    throw errorDetail;
-  }
-
-  return JSON.parse(responseText);
+  return apiClient.post('/api/auth/mfa/verify', { code, mfa_token: mfaToken });
 }
 
 export function LoginForm() {
@@ -149,19 +108,21 @@ export function LoginForm() {
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1000);
-    } catch (err) {
+    } catch (err: any) {
       console.error("로그인 오류:", err);
 
       let errorMessage = '로그인 중 오류가 발생했습니다.';
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (err && typeof err === 'object' && 'detail' in err) {
-        const detail = (err as any).detail;
+      // apiClient 에러 형식 처리
+      const errorData = err?.response?.data;
+      if (errorData?.detail) {
+        const detail = errorData.detail;
         if (Array.isArray(detail) && detail.length > 0) {
           errorMessage = detail[0].msg || '입력 데이터 오류가 발생했습니다.';
         } else {
-          errorMessage = detail ? String(detail) : errorMessage;
+          errorMessage = String(detail);
         }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
       }
 
       setError(errorMessage);
@@ -178,13 +139,14 @@ export function LoginForm() {
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1000);
-    } catch (err) {
+    } catch (err: any) {
       console.error("MFA 오류:", err);
 
       let errorMessage = '인증 코드가 올바르지 않습니다.';
-      if (err && typeof err === 'object' && 'detail' in err) {
-        const detail = (err as any).detail;
-        errorMessage = detail ? String(detail) : errorMessage;
+      // apiClient 에러 형식 처리
+      const errorData = err?.response?.data;
+      if (errorData?.detail) {
+        errorMessage = String(errorData.detail);
       }
 
       setError(errorMessage);
