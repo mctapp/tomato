@@ -117,16 +117,23 @@ class APIGatewayMiddleware(BaseHTTPMiddleware):
             except:
                 pass  # JSON이 아닌 경우 그대로
         
-        # 7. 보안 헤더 추가 (Content-Length 헤더 제외)
-        response_headers = {
-            k: v for k, v in response.headers.items() 
-            if k.lower() != "content-length"
-        }
+        # 7. 보안 헤더 추가 (Content-Length 헤더 제외, Set-Cookie 중복 보존)
+        # Set-Cookie는 여러 개일 수 있으므로 별도 리스트로 보존
+        set_cookie_headers = []
+        response_headers = {}
+        for k, v in response.headers.items():
+            if k.lower() == "content-length":
+                continue
+            elif k.lower() == "set-cookie":
+                set_cookie_headers.append(v)
+            else:
+                response_headers[k] = v
+
         response_headers.update({
             "X-Request-ID": getattr(request.state, 'request_id', ''),
             "X-Process-Time": str(process_time),
         })
-        
+
         # 8. API 키 사용 기록
         if api_key:
             try:
@@ -157,12 +164,18 @@ class APIGatewayMiddleware(BaseHTTPMiddleware):
                 print(f"Failed to record API usage: {e}")
         
         # 새 응답 생성 (Content-Length는 자동으로 설정됨)
-        return Response(
+        new_response = Response(
             content=body,
             status_code=response.status_code,
             headers=response_headers,
             media_type=response.media_type
         )
+
+        # Set-Cookie 헤더 복원 (중복 허용)
+        for cookie_value in set_cookie_headers:
+            new_response.headers.append("Set-Cookie", cookie_value)
+
+        return new_response
     
     async def _authenticate(self, request: Request) -> tuple[Optional[APIKey], Optional[User]]:
         """인증 처리"""
