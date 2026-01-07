@@ -57,7 +57,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import {
@@ -149,32 +149,32 @@ interface ToggleScheduleResponse {
 
 // API 함수
 const fetchBackups = async (): Promise<BackupsResponse> => {
-  const response = await axios.get("/api/admin/database/backups");
+  const response = await api.get("/api/admin/database/backups");
   return response.data;
 };
 
 const fetchTables = async (): Promise<TablesResponse> => {
-  const response = await axios.get("/api/admin/database/tables");
+  const response = await api.get("/api/admin/database/tables");
   return response.data;
 };
 
 const fetchDBSummary = async (): Promise<DBSummary> => {
-  const response = await axios.get("/api/admin/database/summary");
+  const response = await api.get("/api/admin/database/summary");
   return response.data;
 };
 
 const fetchScheduledBackups = async (): Promise<ScheduledBackupsResponse> => {
-  const response = await axios.get("/api/admin/database/scheduled-backups");
+  const response = await api.get("/api/admin/database/scheduled-backups");
   return response.data;
 };
 
 const createBackup = async (description: string | null): Promise<Backup> => {
-  const response = await axios.post("/api/admin/database/backup", { description });
+  const response = await api.post("/api/admin/database/backup", { description });
   return response.data;
 };
 
 const createScheduledBackup = async (data: ScheduleFormData): Promise<ScheduledBackup> => {
-  const response = await axios.post("/api/admin/database/scheduled-backups", {
+  const response = await api.post("/api/admin/database/scheduled-backups", {
     ...data,
     description: data.description || null // 빈 문자열을 null로 처리
   });
@@ -182,17 +182,17 @@ const createScheduledBackup = async (data: ScheduleFormData): Promise<ScheduledB
 };
 
 const toggleScheduledBackup = async (id: number): Promise<ToggleScheduleResponse> => {
-  const response = await axios.put(`/api/admin/database/scheduled-backups/${id}/toggle`);
+  const response = await api.put(`/api/admin/database/scheduled-backups/${id}/toggle`);
   return response.data;
 };
 
 const deleteBackup = async (id: number): Promise<{ success: boolean }> => {
-  const response = await axios.delete(`/api/admin/database/backups/${id}`);
+  const response = await api.delete(`/api/admin/database/backups/${id}`);
   return response.data;
 };
 
 const deleteScheduledBackup = async (id: number): Promise<{ success: boolean }> => {
-  const response = await axios.delete(`/api/admin/database/scheduled-backups/${id}`);
+  const response = await api.delete(`/api/admin/database/scheduled-backups/${id}`);
   return response.data;
 };
 
