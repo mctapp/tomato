@@ -464,7 +464,7 @@ function DatabaseManagementContent() {
                       <CardContent className="p-4 pt-0">
                         <div className="flex items-center">
                           <Database className="h-8 w-8 text-[#ff6246] mr-3" />
-                          <p className="text-3xl font-bold text-[#333333]">{summaryQuery.data?.database_size.pretty}</p>
+                          <p className="text-3xl font-bold text-[#333333]">{summaryQuery.data?.database_size?.pretty ?? "-"}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -505,7 +505,7 @@ function DatabaseManagementContent() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {summaryQuery.data?.largest_tables.map((table) => (
+                            {summaryQuery.data?.largest_tables?.map((table) => (
                               <TableRow key={table.table_name} className="hover:bg-gray-50">
                                 <TableCell className="font-medium">{table.table_name}</TableCell>
                                 <TableCell className="text-right">{table.size}</TableCell>
@@ -532,7 +532,7 @@ function DatabaseManagementContent() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {summaryQuery.data?.most_rows.map((table) => (
+                            {summaryQuery.data?.most_rows?.map((table) => (
                               <TableRow key={table.table_name} className="hover:bg-gray-50">
                                 <TableCell className="font-medium">{table.table_name}</TableCell>
                                 <TableCell className="text-right">{table.row_count.toLocaleString()}</TableCell>
@@ -1038,7 +1038,7 @@ function DatabaseManagementContent() {
                         .sort((a, b) => b.bytes - a.bytes)
                         .map((table) => {
                           // DB 전체 크기에 대한 테이블 크기 비율 계산
-                          const totalBytes = summaryQuery.data?.database_size.bytes || 1;
+                          const totalBytes = summaryQuery.data?.database_size?.bytes || 1;
                           // 올바른 비율 계산 (0-100% 사이로 제한)
                           const percentage = Math.min(100, (table.bytes / totalBytes) * 100);
 
