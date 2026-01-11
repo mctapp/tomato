@@ -72,37 +72,37 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// 타입 정의
+// 타입 정의 (camelCase - api 인터셉터가 snake_case를 변환함)
 interface Backup {
   id: number;
   filename: string;
   description: string | null;
-  created_at: string;
-  size_mb: number;
-  scheduled_backup_id: number | null;
+  createdAt: string;
+  sizeMb: number;
+  scheduledBackupId: number | null;
 }
 
 interface TableStat {
-  table_name: string;
-  row_count: number;
+  tableName: string;
+  rowCount: number;
   size: string;
   bytes: number;
 }
 
 interface DBSummary {
-  table_count: number;
-  database_size: {
+  tableCount: number;
+  databaseSize: {
     pretty: string;
     bytes: number;
   };
-  largest_tables: {
-    table_name: string;
+  largestTables: {
+    tableName: string;
     size: string;
     bytes: number;
   }[];
-  most_rows: {
-    table_name: string;
-    row_count: number;
+  mostRows: {
+    tableName: string;
+    rowCount: number;
   }[];
 }
 
@@ -110,11 +110,11 @@ interface ScheduledBackup {
   id: number;
   name: string;
   description: string | null;
-  schedule_type: ScheduleType;
-  schedule_info: string;
-  is_active: boolean;
-  created_at: string;
-  last_run: string | null;
+  scheduleType: ScheduleType;
+  scheduleInfo: string;
+  isActive: boolean;
+  createdAt: string;
+  lastRun: string | null;
 }
 
 // 개선된 타입 정의
@@ -123,11 +123,11 @@ type ScheduleType = "daily" | "weekly" | "monthly";
 interface ScheduleFormData {
   name: string;
   description: string;
-  schedule_type: ScheduleType;
+  scheduleType: ScheduleType;
   hour: number;
   minute: number;
-  day_of_week: number;
-  day_of_month: number;
+  dayOfWeek: number;
+  dayOfMonth: number;
 }
 
 // API 응답 타입
@@ -140,11 +140,11 @@ interface TablesResponse {
 }
 
 interface ScheduledBackupsResponse {
-  scheduled_backups: ScheduledBackup[];
+  scheduledBackups: ScheduledBackup[];
 }
 
 interface ToggleScheduleResponse {
-  is_active: boolean;
+  isActive: boolean;
 }
 
 // API 함수
@@ -203,11 +203,11 @@ function DatabaseManagementContent() {
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormData>({
     name: "",
     description: "",
-    schedule_type: "daily",
+    scheduleType: "daily",
     hour: 0,
     minute: 0,
-    day_of_week: 0,
-    day_of_month: 1
+    dayOfWeek: 0,
+    dayOfMonth: 1
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -280,11 +280,11 @@ function DatabaseManagementContent() {
       setScheduleForm({
         name: "",
         description: "",
-        schedule_type: "daily",
+        scheduleType: "daily",
         hour: 0,
         minute: 0,
-        day_of_week: 0,
-        day_of_month: 1
+        dayOfWeek: 0,
+        dayOfMonth: 1
       });
       queryClient.invalidateQueries({ queryKey: ["scheduled-backups"] });
     },
@@ -297,7 +297,7 @@ function DatabaseManagementContent() {
   const toggleScheduleMutation = useMutation({
     mutationFn: toggleScheduledBackup,
     onSuccess: (data) => {
-      const status = data.is_active ? "활성화" : "비활성화";
+      const status = data.isActive ? "활성화" : "비활성화";
       toast.success(`예약 백업이 ${status}되었습니다.`);
       queryClient.invalidateQueries({ queryKey: ["scheduled-backups"] });
     },
@@ -452,7 +452,7 @@ function DatabaseManagementContent() {
                       <CardContent className="p-4 pt-0">
                         <div className="flex items-center">
                           <Table2 className="h-8 w-8 text-[#4da34c] mr-3" />
-                          <p className="text-3xl font-bold text-[#333333]">{summaryQuery.data?.table_count}</p>
+                          <p className="text-3xl font-bold text-[#333333]">{summaryQuery.data?.tableCount}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -464,7 +464,7 @@ function DatabaseManagementContent() {
                       <CardContent className="p-4 pt-0">
                         <div className="flex items-center">
                           <Database className="h-8 w-8 text-[#ff6246] mr-3" />
-                          <p className="text-3xl font-bold text-[#333333]">{summaryQuery.data?.database_size?.pretty ?? "-"}</p>
+                          <p className="text-3xl font-bold text-[#333333]">{summaryQuery.data?.databaseSize?.pretty ?? "-"}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -478,7 +478,7 @@ function DatabaseManagementContent() {
                           <Clock className="h-8 w-8 text-blue-500 mr-3" />
                           <p className="text-lg font-medium text-[#333333]">
                             {backupsQuery.data?.backups && backupsQuery.data.backups.length > 0
-                              ? format(new Date(backupsQuery.data.backups[0].created_at), "yyyy-MM-dd HH:mm:ss")
+                              ? format(new Date(backupsQuery.data.backups[0].createdAt), "yyyy-MM-dd HH:mm:ss")
                               : "백업 없음"}
                           </p>
                         </div>
@@ -505,9 +505,9 @@ function DatabaseManagementContent() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {summaryQuery.data?.largest_tables?.map((table) => (
-                              <TableRow key={table.table_name} className="hover:bg-gray-50">
-                                <TableCell className="font-medium">{table.table_name}</TableCell>
+                            {summaryQuery.data?.largestTables?.map((table) => (
+                              <TableRow key={table.tableName} className="hover:bg-gray-50">
+                                <TableCell className="font-medium">{table.tableName}</TableCell>
                                 <TableCell className="text-right">{table.size}</TableCell>
                               </TableRow>
                             ))}
@@ -532,10 +532,10 @@ function DatabaseManagementContent() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {summaryQuery.data?.most_rows?.map((table) => (
-                              <TableRow key={table.table_name} className="hover:bg-gray-50">
-                                <TableCell className="font-medium">{table.table_name}</TableCell>
-                                <TableCell className="text-right">{table.row_count.toLocaleString()}</TableCell>
+                            {summaryQuery.data?.mostRows?.map((table) => (
+                              <TableRow key={table.tableName} className="hover:bg-gray-50">
+                                <TableCell className="font-medium">{table.tableName}</TableCell>
+                                <TableCell className="text-right">{table.rowCount.toLocaleString()}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -656,7 +656,7 @@ function DatabaseManagementContent() {
                                 <TableRow key={backup.id} className="hover:bg-gray-50">
                                   <TableCell className="font-medium">
                                     {backup.filename}
-                                    {backup.scheduled_backup_id && 
+                                    {backup.scheduledBackupId && 
                                       <Badge variant="outline" className="ml-2 bg-blue-50">예약</Badge>
                                     }
                                   </TableCell>
@@ -664,9 +664,9 @@ function DatabaseManagementContent() {
                                     {backup.description || <span className="text-gray-400">-</span>}
                                   </TableCell>
                                   <TableCell>
-                                    {format(new Date(backup.created_at), "yyyy-MM-dd HH:mm:ss")}
+                                    {format(new Date(backup.createdAt), "yyyy-MM-dd HH:mm:ss")}
                                   </TableCell>
-                                  <TableCell>{backup.size_mb.toFixed(2)} MB</TableCell>
+                                  <TableCell>{backup.sizeMb.toFixed(2)} MB</TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex items-center justify-end space-x-2">
                                       <Button
@@ -771,8 +771,8 @@ function DatabaseManagementContent() {
                                 주기
                               </Label>
                               <Select
-                                value={scheduleForm.schedule_type}
-                                onValueChange={(value) => handleScheduleFormChange('schedule_type', value as ScheduleType)}
+                                value={scheduleForm.scheduleType}
+                                onValueChange={(value) => handleScheduleFormChange('scheduleType', value as ScheduleType)}
                               >
                                 <SelectTrigger className="col-span-3">
                                   <SelectValue placeholder="주기 선택" />
@@ -785,14 +785,14 @@ function DatabaseManagementContent() {
                               </Select>
                             </div>
                             
-                            {scheduleForm.schedule_type === 'weekly' && (
+                            {scheduleForm.scheduleType === 'weekly' && (
                               <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="day-of-week" className="text-right">
                                   요일
                                 </Label>
                                 <Select
-                                  value={scheduleForm.day_of_week.toString()}
-                                  onValueChange={(value) => handleScheduleFormChange('day_of_week', parseInt(value))}
+                                  value={scheduleForm.dayOfWeek.toString()}
+                                  onValueChange={(value) => handleScheduleFormChange('dayOfWeek', parseInt(value))}
                                 >
                                   <SelectTrigger className="col-span-3">
                                     <SelectValue placeholder="요일 선택" />
@@ -806,14 +806,14 @@ function DatabaseManagementContent() {
                               </div>
                             )}
                             
-                            {scheduleForm.schedule_type === 'monthly' && (
+                            {scheduleForm.scheduleType === 'monthly' && (
                               <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="day-of-month" className="text-right">
                                   일자
                                 </Label>
                                 <Select
-                                  value={scheduleForm.day_of_month.toString()}
-                                  onValueChange={(value) => handleScheduleFormChange('day_of_month', parseInt(value))}
+                                  value={scheduleForm.dayOfMonth.toString()}
+                                  onValueChange={(value) => handleScheduleFormChange('dayOfMonth', parseInt(value))}
                                 >
                                   <SelectTrigger className="col-span-3">
                                     <SelectValue placeholder="일자 선택" />
@@ -893,7 +893,7 @@ function DatabaseManagementContent() {
                           예약 백업 목록을 불러오는 중 오류가 발생했습니다.
                         </p>
                       </div>
-                    ) : scheduledBackupsQuery.data?.scheduled_backups.length === 0 ? (
+                    ) : scheduledBackupsQuery.data?.scheduledBackups.length === 0 ? (
                       <div className="text-center text-gray-500 py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                         <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                         <p>아직 생성된 예약 백업이 없습니다.</p>
@@ -913,7 +913,7 @@ function DatabaseManagementContent() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {scheduledBackupsQuery.data?.scheduled_backups.map((schedule) => (
+                            {scheduledBackupsQuery.data?.scheduledBackups.map((schedule) => (
                               <TableRow key={schedule.id} className="hover:bg-gray-50">
                                 <TableCell className="font-medium">
                                   {schedule.name}
@@ -922,16 +922,16 @@ function DatabaseManagementContent() {
                                   {schedule.description || <span className="text-gray-400">-</span>}
                                 </TableCell>
                                 <TableCell>
-                                  {schedule.schedule_info}
+                                  {schedule.scheduleInfo}
                                 </TableCell>
                                 <TableCell>
-                                  {schedule.last_run 
-                                    ? format(new Date(schedule.last_run), "yyyy-MM-dd HH:mm:ss")
+                                  {schedule.lastRun 
+                                    ? format(new Date(schedule.lastRun), "yyyy-MM-dd HH:mm:ss")
                                     : <span className="text-gray-400">아직 실행되지 않음</span>
                                   }
                                 </TableCell>
                                 <TableCell>
-                                  {schedule.is_active 
+                                  {schedule.isActive 
                                     ? <Badge className="bg-green-100 text-green-800">활성</Badge>
                                     : <Badge variant="outline" className="text-gray-500">비활성</Badge>
                                   }
@@ -942,12 +942,12 @@ function DatabaseManagementContent() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => handleToggleSchedule(schedule.id)}
-                                      className={schedule.is_active 
+                                      className={schedule.isActive 
                                         ? "hover:bg-amber-50 hover:text-amber-500" 
                                         : "hover:bg-green-50 hover:text-green-500"
                                       }
                                     >
-                                      {schedule.is_active 
+                                      {schedule.isActive 
                                         ? <Pause className="h-4 w-4" />
                                         : <Play className="h-4 w-4" />
                                       }
@@ -1038,17 +1038,17 @@ function DatabaseManagementContent() {
                         .sort((a, b) => b.bytes - a.bytes)
                         .map((table) => {
                           // DB 전체 크기에 대한 테이블 크기 비율 계산
-                          const totalBytes = summaryQuery.data?.database_size?.bytes || 1;
+                          const totalBytes = summaryQuery.data?.databaseSize?.bytes || 1;
                           // 올바른 비율 계산 (0-100% 사이로 제한)
                           const percentage = Math.min(100, (table.bytes / totalBytes) * 100);
 
                           return (
-                            <TableRow key={table.table_name} className="hover:bg-gray-50">
+                            <TableRow key={table.tableName} className="hover:bg-gray-50">
                               <TableCell className="font-medium">
-                                {table.table_name}
+                                {table.tableName}
                               </TableCell>
                               <TableCell className="text-right">
-                                {table.row_count.toLocaleString()}
+                                {table.rowCount.toLocaleString()}
                               </TableCell>
                               <TableCell className="text-right">{table.size}</TableCell>
                               <TableCell className="text-right">
